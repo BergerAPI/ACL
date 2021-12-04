@@ -1,0 +1,7 @@
+ACL
+===
+
+This language aims to be simple, and easy to learn. 
+It's made with C++ and we interpret it.
+For examples please check ``/examples``, and for out tests check ``/tests``
+We would appreciate a star or even a fork.
