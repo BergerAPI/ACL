@@ -26,30 +26,41 @@ void Interpreter::interpret(AbstractSyntaxTree *ast) {
 void Interpreter::interpretChild(AstChild *node) {
     // Interpret the child node
     if (node->getIdentifier() == "Expression" || node->getIdentifier() == "NumberLiteral" ||
-        node->getIdentifier() == "Unary") {
+        node->getIdentifier() == "Unary" || node->getIdentifier() == "StringLiteral") {
         // We need to calculate the value of the expression
         // and store it in the value field of the node
-        std::cout << interpretMathExpression(node) << std::endl;
+        std::cout << interpretExpression(node) << std::endl;
     }
 }
 
-BasicValue Interpreter::interpretMathExpression(AstChild *node) {
+BasicValue Interpreter::interpretExpression(AstChild *node) {
     if (node->getIdentifier() == "Expression") {
         auto *realNode = dynamic_cast<ExpressionNode *>(node);
-        auto left = interpretMathExpression(realNode->left.release());
-        auto right = interpretMathExpression(realNode->right.release());
+        auto left = interpretExpression(realNode->left.release());
+        auto right = interpretExpression(realNode->right.release());
 
         if (left.type == BasicValue::Type::INT && right.type == BasicValue::Type::INT) {
             if (realNode->op == "+") return BasicValue(left.intValue + right.intValue);
             else if (realNode->op == "-") return BasicValue(left.intValue - right.intValue);
             else if (realNode->op == "*") return BasicValue(left.intValue * right.intValue);
             else if (realNode->op == "/") return BasicValue(left.intValue / right.intValue);
+        } else if (left.type == BasicValue::Type::STRING && right.type == BasicValue::Type::STRING) {
+            if (realNode->op == "+") return BasicValue(left.stringValue + right.stringValue);
+            else throw std::runtime_error("Cannot divide, multiply two strings");
+        } else if (left.type == BasicValue::Type::INT && right.type == BasicValue::Type::STRING) {
+            if (realNode->op == "+") return BasicValue(std::to_string(left.intValue) + right.stringValue);
+            else throw std::runtime_error("Cannot divide, multiply two strings");
+        } else if (left.type == BasicValue::Type::STRING && right.type == BasicValue::Type::INT) {
+            if (realNode->op == "+") return BasicValue(left.stringValue + std::to_string(right.intValue));
+            else throw std::runtime_error("Cannot divide, multiply two strings");
         } else throw std::runtime_error("Cannot perform math operation on non-integer values");
     } else if (node->getIdentifier() == "NumberLiteral")
         return BasicValue((dynamic_cast<NumberLiteralNode *>(node))->value);
+    else if (node->getIdentifier() == "StringLiteral")
+        return BasicValue((dynamic_cast<StringLiteralNode *>(node))->value);
     else if (node->getIdentifier() == "Unary") {
         auto realNode = dynamic_cast<UnaryExpressionNode *>(node);
-        BasicValue value = interpretMathExpression(realNode->child.release());
+        BasicValue value = interpretExpression(realNode->child.release());
 
         if (value.type == BasicValue::Type::INT) {
             if (realNode->op == "-")
@@ -59,5 +70,5 @@ BasicValue Interpreter::interpretMathExpression(AstChild *node) {
         } else throw std::runtime_error("Cannot perform unary operation on non-integer values");
     }
 
-    throw std::runtime_error("Cannot interpret math expression");
+    throw std::runtime_error("Cannot interpret expression");
 }

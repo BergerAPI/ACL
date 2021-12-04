@@ -22,7 +22,7 @@
 static constexpr const char *k_file_extension = ".acl";
 
 int main() {
-    std::string line = "7 + 2 * 2";
+    std::string line = R"("Nar" + 2)";
     std::stringstream ss;
 
     ss << line;
@@ -34,8 +34,6 @@ int main() {
 
     // Parse the tokens
     auto ast = parser.parse();
-
-    ast->print();
 
     // Interpret the AST
     Interpreter::interpret(ast);

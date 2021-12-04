@@ -101,6 +101,24 @@ public:
     }
 };
 
+class StringLiteralNode : public AstChild {
+public:
+    ~StringLiteralNode() override = default;
+
+    std::string value;
+
+    // Constructor requires a value
+    explicit StringLiteralNode(std::string value) : value(std::move(value)) {}
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "StringLiteral";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(\"" << value << "\")";
+    }
+};
+
 class AbstractSyntaxTree {
 public:
     virtual ~AbstractSyntaxTree() = default;

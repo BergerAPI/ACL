@@ -26,6 +26,9 @@ std::unique_ptr<AstChild> Parser::factor() {
         case Token::Type::NUMBER:
             return std::make_unique<NumberLiteralNode>(std::stoi(currentToken.raw));
 
+        case Token::Type::STRING:
+            return std::make_unique<StringLiteralNode>(currentToken.raw);
+
         case Token::Type::LEFT_PAREN: {
             auto expr = this->expression();
             this->expect(Token::Type::RIGHT_PAREN);
@@ -94,6 +97,7 @@ AbstractSyntaxTree *Parser::parse() {
         auto token = tokens[this->currentTokenIndex];
 
         switch (token.type) {
+            case Token::Type::STRING:
             case Token::Type::LEFT_PAREN:
             case Token::Type::OPERATOR:
             case Token::Type::NUMBER: {

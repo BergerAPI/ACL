@@ -27,7 +27,7 @@ public:
 
     static void interpretChild(AstChild *node);
 
-    static BasicValue interpretMathExpression(AstChild *node);
+    static BasicValue interpretExpression(AstChild *node);
 };
 
 
