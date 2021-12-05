@@ -15,27 +15,39 @@
  */
 
 #include <iostream>
+#include <fstream>
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 #include "interpreter/interpreter.h"
 
 static constexpr const char *k_file_extension = ".acl";
 
-int main() {
-    std::string line = "var a = \"Test\"\n a + \"sdf\"";
-    std::stringstream ss;
+int main(int argv, char** args) {
+    if (argv < 2) {
+        std::cout << "Usage: " << args[0] << " <file>" << std::endl;
+        return 1;
+    }
 
-    ss << line;
+    std::string file_name = args[1];
 
-    std::vector<Token> tokens = Lexer::tokenize(ss);
+    if (file_name.find(k_file_extension) == std::string::npos) {
+        file_name += k_file_extension;
+    }
+
+    std::ifstream file(file_name);
+
+    if (!file.is_open()) {
+        std::cout << "File not found: " << file_name << std::endl;
+        return 1;
+    }
+
+    std::vector<Token> tokens = Lexer::tokenize(file);
 
     // Parsing
     Parser parser(tokens);
 
     // Parse the tokens
     auto ast = parser.parse();
-
-    ast->print();
 
     Interpreter interpreter(ast);
 
