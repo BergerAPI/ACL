@@ -46,32 +46,28 @@ std::vector<Token> Lexer::tokenize(std::istream &input) {
             if (c == '\n')
                 continue;
 
-            // If the char is a number, create a number token
-            if (isdigit(c)) {
+            // If the char is an integer or float, create an integer/a float token
+            if (std::isdigit(c)) {
                 std::string number;
 
-                // Checking if we have an integer or a float
-                if (i + 1 < line.size() && line[i + 1] == '.') {
+                while (std::isdigit(c) || c == '.') {
                     number += c;
-                    number += line[i + 1];
                     i++;
-
-                    while (i < line.size() && isdigit(line[i])) {
-                        number += line[i];
-                        i++;
-                    }
-
-                    tokens.emplace_back(Token::Type::FLOAT, number, line_index);
-                } else {
-                    while (i < line.size() && isdigit(line[i])) {
-                        number += line[i];
-                        i++;
-                    }
-
-                    tokens.emplace_back(Token::Type::INT, number, line_index);
+                    if (i >= line.size())
+                        break;
+                    c = line[i];
                 }
+
+                i--;
+
+                if (number.find('.') != std::string::npos)
+                    tokens.emplace_back(Token::Type::FLOAT, number, line_index);
+                else
+                    tokens.emplace_back(Token::Type::INT, number, line_index);
+
                 continue;
             }
+
 
             // If the char is an identifier
             if (isalpha(c)) {

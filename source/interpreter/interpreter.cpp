@@ -173,7 +173,21 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             int index = 0;
 
             for (auto &item: realNode->args) {
-                value += this->interpretExpression(item.release()).stringValue;
+                auto expression = this->interpretExpression(item.release());
+
+                switch (expression.type) {
+                    case BasicValue::Type::INT:
+                        value += std::to_string(expression.intValue);
+                        break;
+                    case BasicValue::Type::FLOAT:
+                        value += std::to_string(expression.floatValue);
+                        break;
+                    case BasicValue::Type::STRING:
+                        value += expression.stringValue;
+                        break;
+                    default:
+                        throw std::runtime_error("Cannot print non-integer values");
+                }
 
                 if (index < realNode->args.size() - 1) value += " ";
 
@@ -199,7 +213,8 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             if (basic_value.type != BasicValue::Type::STRING)
                 throw std::runtime_error("len() can only be used on strings and lists");
 
-            return BasicValue(std::to_string(basic_value.stringValue.size()));
+            // Returning an integer
+            return BasicValue((int) basic_value.stringValue.size());
         } else if (realNode->name == "readFile") {
             // Reading a file
             if (realNode->args.size() != 1)
