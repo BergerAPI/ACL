@@ -50,14 +50,26 @@ std::vector<Token> Lexer::tokenize(std::istream &input) {
             if (isdigit(c)) {
                 std::string number;
 
-                while (i < line.size() && isdigit(line[i])) {
-                    number += line[i];
+                // Checking if we have an integer or a float
+                if (i + 1 < line.size() && line[i + 1] == '.') {
+                    number += c;
+                    number += line[i + 1];
                     i++;
+
+                    while (i < line.size() && isdigit(line[i])) {
+                        number += line[i];
+                        i++;
+                    }
+
+                    tokens.emplace_back(Token::Type::FLOAT, number, line_index);
+                } else {
+                    while (i < line.size() && isdigit(line[i])) {
+                        number += line[i];
+                        i++;
+                    }
+
+                    tokens.emplace_back(Token::Type::INT, number, line_index);
                 }
-
-                i--;
-
-                tokens.emplace_back(Token::Type::NUMBER, number, line_index);
                 continue;
             }
 

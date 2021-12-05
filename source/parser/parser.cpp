@@ -106,9 +106,13 @@ std::unique_ptr<AstChild> Parser::factor() {
     auto currentToken = this->tokens[this->currentTokenIndex];
 
     switch (currentToken.type) {
-        case Token::Type::NUMBER:
+        case Token::Type::INT:
             this->currentTokenIndex++;
-            return std::make_unique<NumberLiteralNode>(std::stoi(currentToken.raw));
+            return std::make_unique<IntegerLiteralNode>(std::stoi(currentToken.raw));
+
+        case Token::Type::FLOAT:
+            this->currentTokenIndex++;
+            return std::make_unique<FloatLiteralNode>(std::stof(currentToken.raw));
 
         case Token::Type::STRING:
             this->currentTokenIndex++;
@@ -239,7 +243,8 @@ std::unique_ptr<AstChild> Parser::parseChild() {
         case Token::Type::STRING:
         case Token::Type::LEFT_PAREN:
         case Token::Type::OPERATOR:
-        case Token::Type::NUMBER:
+        case Token::Type::INT:
+        case Token::Type::FLOAT:
             // Expression
             return this->expression();
 

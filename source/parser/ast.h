@@ -58,18 +58,36 @@ public:
     }
 };
 
-class NumberLiteralNode : public AstChild {
+class IntegerLiteralNode : public AstChild {
 
 public:
-    ~NumberLiteralNode() override = default;
+    ~IntegerLiteralNode() override = default;
 
     int value;
 
     // Constructor requires a value
-    explicit NumberLiteralNode(int value) : value(value) {}
+    explicit IntegerLiteralNode(int value) : value(value) {}
 
     [[nodiscard]] std::string getIdentifier() override {
-        return "NumberLiteral";
+        return "IntegerLiteral";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(" << value << ")";
+    }
+};
+
+class FloatLiteralNode : public AstChild {
+public:
+    ~FloatLiteralNode() override = default;
+
+    float value;
+
+    // Constructor requires a value
+    explicit FloatLiteralNode(float value) : value(value) {}
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "FloatLiteral";
     }
 
     void print() override {

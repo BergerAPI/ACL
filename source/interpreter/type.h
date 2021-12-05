@@ -24,23 +24,34 @@ class BasicValue {
 public:
     enum Type {
         INT,
-        STRING
+        FLOAT,
+        STRING,
+        VOID,
     };
 
     Type type;
 
     int intValue{};
+    float floatValue{};
     std::string stringValue;
 
     explicit BasicValue(int value) : type(INT), intValue(value) {}
 
+    explicit BasicValue(float value) : type(FLOAT), floatValue(value) {}
+
     explicit BasicValue(std::string value) : type(STRING), stringValue(std::move(value)) {}
+
+    explicit BasicValue() : type(STRING), stringValue("void"), intValue(0) {}
 
     friend std::ostream &operator<<(std::ostream &os, const BasicValue &value) {
         switch (value.type) {
             case INT:
                 os << value.intValue;
                 break;
+            case FLOAT:
+                os << value.floatValue;
+                break;
+            case VOID:
             case STRING:
                 os << value.stringValue;
                 break;

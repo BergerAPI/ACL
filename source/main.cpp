@@ -49,8 +49,6 @@ int main(int argv, char** args) {
     // Parse the tokens
     auto ast = parser.parse();
 
-    ast->print();
-
     Interpreter interpreter(ast);
 
     // Interpret the AST

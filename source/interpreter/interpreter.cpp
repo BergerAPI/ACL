@@ -25,7 +25,8 @@ void Interpreter::interpret() {
 
 void Interpreter::interpretChild(AstChild *node) {
     // Interpret the child node
-    if (node->getIdentifier() == "Expression" || node->getIdentifier() == "NumberLiteral" ||
+    if (node->getIdentifier() == "Expression" || node->getIdentifier() == "IntegerLiteral" ||
+        node->getIdentifier() == "FloatLiteral" ||
         node->getIdentifier() == "Unary" || node->getIdentifier() == "StringLiteral" ||
         node->getIdentifier() == "VariableReference" || node->getIdentifier() == "FunctionCall") {
         // We need to calculate the value of the expression
@@ -106,9 +107,35 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             else if (realNode->op == "==") return BasicValue(left.stringValue == std::to_string(right.intValue));
             else if (realNode->op == "!=") return BasicValue(left.stringValue != std::to_string(right.intValue));
             else throw std::runtime_error("Cannot divide, multiply two strings");
-        } else throw std::runtime_error("Cannot perform math operation on non-integer values");
-    } else if (node->getIdentifier() == "NumberLiteral")
-        return BasicValue((dynamic_cast<NumberLiteralNode *>(node))->value);
+        } else if (left.type == BasicValue::Type::FLOAT || right.type == BasicValue::Type::FLOAT) {
+            if (realNode->op == "+") return BasicValue(left.floatValue + right.floatValue);
+            else if (realNode->op == "-") return BasicValue(left.floatValue - right.floatValue);
+            else if (realNode->op == "*") return BasicValue(left.floatValue * right.floatValue);
+            else if (realNode->op == "/") return BasicValue(left.floatValue / right.floatValue);
+            else if (realNode->op == "==") return BasicValue(left.floatValue == right.floatValue);
+            else if (realNode->op == "!=") return BasicValue(left.floatValue != right.floatValue);
+            else if (realNode->op == "<") return BasicValue(left.floatValue < right.floatValue);
+            else if (realNode->op == ">") return BasicValue(left.floatValue > right.floatValue);
+            else if (realNode->op == "<=") return BasicValue(left.floatValue <= right.floatValue);
+            else if (realNode->op == ">=") return BasicValue(left.floatValue >= right.floatValue);
+            else throw std::runtime_error("Unknown operator " + realNode->op);
+        } else if (left.type == BasicValue::Type::STRING || right.type == BasicValue::Type::FLOAT) {
+            if (realNode->op == "+") return BasicValue(left.stringValue + std::to_string(right.floatValue));
+            else if (realNode->op == "==") return BasicValue(left.stringValue == std::to_string(right.floatValue));
+            else if (realNode->op == "!=") return BasicValue(left.stringValue != std::to_string(right.floatValue));
+            else throw std::runtime_error("Cannot divide, multiply two strings");
+        } else if (left.type == BasicValue::Type::FLOAT || right.type == BasicValue::Type::STRING) {
+            if (realNode->op == "+") return BasicValue(std::to_string(left.floatValue) + right.stringValue);
+            else if (realNode->op == "==") return BasicValue(std::to_string(left.floatValue) == right.stringValue);
+            else if (realNode->op == "!=") return BasicValue(std::to_string(left.floatValue) != right.stringValue);
+            else throw std::runtime_error("Cannot divide, multiply two strings");
+        }
+
+        throw std::runtime_error("Cannot perform math operation on non-integer values");
+    } else if (node->getIdentifier() == "IntegerLiteral")
+        return BasicValue((dynamic_cast<IntegerLiteralNode *>(node))->value);
+    else if (node->getIdentifier() == "FloatLiteral")
+        return BasicValue((dynamic_cast<FloatLiteralNode *>(node))->value);
     else if (node->getIdentifier() == "StringLiteral")
         return BasicValue((dynamic_cast<StringLiteralNode *>(node))->value);
     else if (node->getIdentifier() == "Unary") {
@@ -224,6 +251,13 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             file << content.stringValue;
 
             return BasicValue(1);
+        } else if (realNode->name == "time") {
+            if (!realNode->args.empty())
+                throw std::runtime_error("time() takes no arguments");
+
+            // We need the time as float (milliseconds)
+            return BasicValue(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count()));
         }
 
         throw std::runtime_error("Function " + realNode->name + " is not defined");
