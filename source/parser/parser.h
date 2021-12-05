@@ -36,6 +36,7 @@ class Parser {
      * Statements
      */
     std::unique_ptr<AstChild> variableDefinition();
+    std::unique_ptr<AstChild> ifStatement();
 
     /**
      * Identifier
@@ -49,6 +50,7 @@ class Parser {
     Token getCurrentToken();
     [[maybe_unused]] Token peekNextToken();
 
+    std::unique_ptr<AstChild> parseChild();
 public:
     AbstractSyntaxTree *parse();
 

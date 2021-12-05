@@ -211,6 +211,41 @@ public:
     }
 };
 
+class IfStatementNode : public AstChild {
+public:
+    ~IfStatementNode() override = default;
+
+    std::unique_ptr<AstChild> condition;
+    std::vector<std::unique_ptr<AstChild>> thenBranch;
+    std::vector<std::unique_ptr<AstChild>> elseBranch;
+
+    // Constructor requires a condition, then branch and else branch
+    IfStatementNode(std::unique_ptr<AstChild> condition, std::vector<std::unique_ptr<AstChild>> thenBranch,
+                    std::vector<std::unique_ptr<AstChild>> elseBranch) {
+        this->condition = std::move(condition);
+        this->thenBranch = std::move(thenBranch);
+        this->elseBranch = std::move(elseBranch);
+    }
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "IfStatement";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(";
+        condition->print();
+        std::cout << " ";
+        for (auto &branch: thenBranch) {
+            branch->print();
+        }
+        std::cout << " ";
+        for (auto &branch: elseBranch) {
+            branch->print();
+        }
+        std::cout << ")";
+    }
+};
+
 class AbstractSyntaxTree {
 public:
     virtual ~AbstractSyntaxTree() = default;

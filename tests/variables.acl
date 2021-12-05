@@ -1,5 +1,3 @@
-print("Welcome! Please type in your name: ")
-
 let name = input()
 let a = "Are you (" + name + ")"
 let b = "really"
@@ -7,5 +5,11 @@ let c = "cool?"
 
 c = "Naruto?"
 
-print(a, b, c)
+let answer = "no"
+
+if name == "Naruto" {
+    answer = "yes"
+}
+
+print(a, b, c, answer)
 print("Length of name:", len(name))

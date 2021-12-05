@@ -52,6 +52,21 @@ void Interpreter::interpretChild(AstChild *node) {
 
         // If we get here, the variable is not defined
         throw std::runtime_error("Variable " + realNode->name + " is not defined");
+    } else if (node->getIdentifier() == "IfStatement") {
+        auto realNode = dynamic_cast<IfStatementNode *>(node);
+
+        // We need to check if the condition is true
+        if (this->interpretExpression(realNode->condition.release()).intValue == 1) {
+            // If it is, we need to interpret the true branch
+            for (auto &item: realNode->thenBranch) {
+                this->interpretChild(item.release());
+            }
+        } else {
+            // If it is not, we need to interpret the false branch
+            for (auto &item: realNode->elseBranch) {
+                this->interpretChild(item.release());
+            }
+        }
     }
 }
 
@@ -66,14 +81,30 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             else if (realNode->op == "-") return BasicValue(left.intValue - right.intValue);
             else if (realNode->op == "*") return BasicValue(left.intValue * right.intValue);
             else if (realNode->op == "/") return BasicValue(left.intValue / right.intValue);
+            else if (realNode->op == "%") return BasicValue(left.intValue % right.intValue);
+            else if (realNode->op == "==") return BasicValue(left.intValue == right.intValue);
+            else if (realNode->op == "!=") return BasicValue(left.intValue != right.intValue);
+            else if (realNode->op == "<") return BasicValue(left.intValue < right.intValue);
+            else if (realNode->op == ">") return BasicValue(left.intValue > right.intValue);
+            else if (realNode->op == "<=") return BasicValue(left.intValue <= right.intValue);
+            else if (realNode->op == ">=") return BasicValue(left.intValue >= right.intValue);
+            else if (realNode->op == "&&") return BasicValue(left.intValue && right.intValue);
+            else if (realNode->op == "||") return BasicValue(left.intValue || right.intValue);
+            else throw std::runtime_error("Unknown operator " + realNode->op);
         } else if (left.type == BasicValue::Type::STRING && right.type == BasicValue::Type::STRING) {
             if (realNode->op == "+") return BasicValue(left.stringValue + right.stringValue);
+            else if (realNode->op == "==") return BasicValue(left.stringValue == right.stringValue);
+            else if (realNode->op == "!=") return BasicValue(left.stringValue != right.stringValue);
             else throw std::runtime_error("Cannot divide, multiply two strings");
         } else if (left.type == BasicValue::Type::INT && right.type == BasicValue::Type::STRING) {
             if (realNode->op == "+") return BasicValue(std::to_string(left.intValue) + right.stringValue);
+            else if (realNode->op == "==") return BasicValue(std::to_string(left.intValue) == right.stringValue);
+            else if (realNode->op == "!=") return BasicValue(std::to_string(left.intValue) != right.stringValue);
             else throw std::runtime_error("Cannot divide, multiply two strings");
         } else if (left.type == BasicValue::Type::STRING && right.type == BasicValue::Type::INT) {
             if (realNode->op == "+") return BasicValue(left.stringValue + std::to_string(right.intValue));
+            else if (realNode->op == "==") return BasicValue(left.stringValue == std::to_string(right.intValue));
+            else if (realNode->op == "!=") return BasicValue(left.stringValue != std::to_string(right.intValue));
             else throw std::runtime_error("Cannot divide, multiply two strings");
         } else throw std::runtime_error("Cannot perform math operation on non-integer values");
     } else if (node->getIdentifier() == "NumberLiteral")

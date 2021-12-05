@@ -81,8 +81,41 @@ std::vector<Token> Lexer::tokenize(std::istream &input) {
                 continue;
             }
 
+            // !=, ==, <, >, <=, >=
+            if (c == '!') {
+                if (i + 1 < line.size() && line[i + 1] == '=') {
+                    tokens.emplace_back(Token::Type::OPERATOR, "!=", line_index);
+                    i++;
+                } else tokens.emplace_back(Token::Type::OPERATOR, "!", line_index);
+                continue;
+            }
+
+            if (c == '=') {
+                if (i + 1 < line.size() && line[i + 1] == '=') {
+                    tokens.emplace_back(Token::Type::OPERATOR, "==", line_index);
+                    i++;
+                } else tokens.emplace_back(Token::Type::EQUALS, "=", line_index);
+                continue;
+            }
+
+            if (c == '<') {
+                if (i + 1 < line.size() && line[i + 1] == '=') {
+                    tokens.emplace_back(Token::Type::OPERATOR, "<=", line_index);
+                    i++;
+                } else tokens.emplace_back(Token::Type::OPERATOR, "<", line_index);
+                continue;
+            }
+
+            if (c == '>') {
+                if (i + 1 < line.size() && line[i + 1] == '=') {
+                    tokens.emplace_back(Token::Type::OPERATOR, ">=", line_index);
+                    i++;
+                } else tokens.emplace_back(Token::Type::OPERATOR, ">", line_index);
+                continue;
+            }
+
             // If the char is an operator character
-            if (c == '+' || c == '-' || c == '*' || c == '/') {
+            if (c == '+' || c == '-' || c == '*' || c == '/' || c == '%') {
                 tokens.emplace_back(Token::Type::OPERATOR, std::string(1, c), line_index);
                 continue;
             }
@@ -120,11 +153,6 @@ std::vector<Token> Lexer::tokenize(std::istream &input) {
 
             if (c == ':') {
                 tokens.emplace_back(Token::Type::COLON, std::string(1, c), line_index);
-                continue;
-            }
-
-            if (c == '=') {
-                tokens.emplace_back(Token::Type::EQUALS, std::string(1, c), line_index);
                 continue;
             }
 
