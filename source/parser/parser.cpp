@@ -173,14 +173,14 @@ std::unique_ptr<AstChild> Parser::expression() {
         left = std::make_unique<ExpressionNode>(std::move(left), std::move(this->term()), currentToken.raw);
     }
 
-    // ==, !=
+    // && and ||
     if (this->currentTokenIndex < this->tokens.size() &&
         (this->tokens[this->currentTokenIndex].raw == "||" || this->tokens[this->currentTokenIndex].raw == "&&")) {
         auto currentToken = this->tokens[this->currentTokenIndex];
 
         this->expect(Token::Type::OPERATOR);
 
-        left = std::make_unique<ExpressionNode>(std::move(left), std::move(this->term()), currentToken.raw);
+        left = std::make_unique<ExpressionNode>(std::move(left), std::move(this->expression()), currentToken.raw);
     }
 
     return left;

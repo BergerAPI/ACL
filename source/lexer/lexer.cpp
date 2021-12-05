@@ -81,7 +81,7 @@ std::vector<Token> Lexer::tokenize(std::istream &input) {
                 continue;
             }
 
-            // !=, ==, <, >, <=, >=
+            // !=, ==, <, >, <=, >=, &&, ||
             if (c == '!') {
                 if (i + 1 < line.size() && line[i + 1] == '=') {
                     tokens.emplace_back(Token::Type::OPERATOR, "!=", line_index);
@@ -111,6 +111,22 @@ std::vector<Token> Lexer::tokenize(std::istream &input) {
                     tokens.emplace_back(Token::Type::OPERATOR, ">=", line_index);
                     i++;
                 } else tokens.emplace_back(Token::Type::OPERATOR, ">", line_index);
+                continue;
+            }
+
+            if (c == '|') {
+                if (i + 1 < line.size() && line[i + 1] == '|') {
+                    tokens.emplace_back(Token::Type::OPERATOR, "||", line_index);
+                    i++;
+                }
+                continue;
+            }
+
+            if (c == '&') {
+                if (i + 1 < line.size() && line[i + 1] == '&') {
+                    tokens.emplace_back(Token::Type::OPERATOR, "&&", line_index);
+                    i++;
+                }
                 continue;
             }
 
