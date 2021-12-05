@@ -151,7 +151,7 @@ AbstractSyntaxTree *Parser::parse() {
                 break;
 
             case Token::Type::KEYWORD:
-                if (token.raw == "var") {
+                if (token.raw == "let") {
                     // Variable definition
                     auto varDef = this->variableDefinition();
 

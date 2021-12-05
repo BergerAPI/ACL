@@ -1,7 +1,7 @@
-var name = input()
-var a = "Is " + name
-var b = "really"
-var c = "cool?"
+let name = input()
+let a = "Is " + name
+let b = "really"
+let c = "cool?"
 
 print(a, b, c)
 print("Length of name:", len(name))
