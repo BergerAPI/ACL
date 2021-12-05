@@ -26,10 +26,11 @@ void Interpreter::interpret() {
 void Interpreter::interpretChild(AstChild *node) {
     // Interpret the child node
     if (node->getIdentifier() == "Expression" || node->getIdentifier() == "NumberLiteral" ||
-        node->getIdentifier() == "Unary" || node->getIdentifier() == "StringLiteral" || node->getIdentifier() == "VariableReference") {
+        node->getIdentifier() == "Unary" || node->getIdentifier() == "StringLiteral" ||
+        node->getIdentifier() == "VariableReference" || node->getIdentifier() == "FunctionCall") {
         // We need to calculate the value of the expression
         // and store it in the value field of the node
-        std::cout << this->interpretExpression(node) << std::endl;
+        this->interpretExpression(node);
     } else if (node->getIdentifier() == "VariableDefinition") {
         auto realNode = dynamic_cast<VariableDefinitionNode *>(node);
 
@@ -76,15 +77,59 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
     } else if (node->getIdentifier() == "VariableReference") {
         auto realNode = dynamic_cast<VariableReferenceNode *>(node);
 
-        // Checking if the variable is defined in the current scope
-        for (auto &variable: this->current_scope->variables) {
-            if (variable.first == realNode->name) {
-                return variable.second;
+        // Checking if the variable is defined in any scope above the current one
+        for (auto scope = this->current_scope; scope != nullptr; scope = scope->parent) {
+            for (auto &variable: scope->variables) {
+                if (variable.first == realNode->name) {
+                    return variable.second;
+                }
             }
         }
 
         throw std::runtime_error("Variable " + realNode->name + " is not defined");
+    } else if (node->getIdentifier() == "FunctionCall") {
+        auto realNode = dynamic_cast<FunctionCallNode *>(node);
+
+        // Build-in
+        if (realNode->name == "print") {
+            if (realNode->args.empty())
+                throw std::runtime_error("print() takes at least one argument");
+
+            std::string value;
+            int index = 0;
+
+            for (auto &item: realNode->args) {
+                value += this->interpretExpression(item.release()).stringValue;
+
+                if (index < realNode->args.size() - 1) value += " ";
+
+                index++;
+            }
+
+            std::cout << value << std::endl;
+            return BasicValue(1);
+        } else if (realNode->name == "input") {
+            if (!realNode->args.empty())
+                throw std::runtime_error("input() takes no arguments");
+
+            std::string value;
+            std::cin >> value;
+
+            return BasicValue(value);
+        } else if (realNode->name == "len") {
+            if (realNode->args.size() != 1)
+                throw std::runtime_error("len() takes exactly one argument");
+
+            auto basic_value = this->interpretExpression(realNode->args[0].release());
+
+            if (basic_value.type != BasicValue::Type::STRING)
+                throw std::runtime_error("len() can only be used on strings and lists");
+
+            return BasicValue(std::to_string(basic_value.stringValue.size()));
+        }
+
+        throw std::runtime_error("Function " + realNode->name + " is not defined");
     }
 
-    throw std::runtime_error("Cannot interpret expression");
+    throw std::runtime_error("Cannot interpret expression: " + node->getIdentifier());
 }

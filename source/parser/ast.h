@@ -161,6 +161,32 @@ public:
     }
 };
 
+class FunctionCallNode : public AstChild {
+public:
+    ~FunctionCallNode() override = default;
+
+    std::string name;
+    std::vector<std::unique_ptr<AstChild>> args;
+
+    // Constructor requires a name and a vector of arguments
+    FunctionCallNode(std::string name, std::vector<std::unique_ptr<AstChild>> args) {
+        this->name = std::move(name);
+        this->args = std::move(args);
+    }
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "FunctionCall";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(" << name << " ";
+        for (auto &arg: args) {
+            arg->print();
+        }
+        std::cout << ")";
+    }
+};
+
 class AbstractSyntaxTree {
 public:
     virtual ~AbstractSyntaxTree() = default;

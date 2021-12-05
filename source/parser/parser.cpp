@@ -24,7 +24,26 @@ std::unique_ptr<AstChild> Parser::identifier() {
 
     // Function call
     if (this->tokens[this->currentTokenIndex].type == Token::Type::LEFT_PAREN) {
-        throw std::runtime_error("Function call not implemented yet");
+        this->currentTokenIndex++;
+
+        auto arguments = std::vector<std::unique_ptr<AstChild>>();
+
+        // Arguments are optional and split by a COMMA
+        while (this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_PAREN) {
+            arguments.push_back(this->expression());
+
+            if (this->tokens[this->currentTokenIndex].type == Token::Type::COMMA) {
+                this->currentTokenIndex++;
+            }
+        }
+
+        if (this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_PAREN) {
+            throw std::runtime_error("Expected ')'");
+        }
+
+        this->currentTokenIndex++;
+
+        return std::make_unique<FunctionCallNode>(currentToken.raw, std::move(arguments));
     }
 
     return std::make_unique<VariableReferenceNode>(currentToken.raw);
@@ -83,16 +102,14 @@ std::unique_ptr<AstChild> Parser::factor() {
 
 std::unique_ptr<AstChild> Parser::term() {
     auto left = this->factor();
-    auto currentToken = this->tokens[this->currentTokenIndex];
 
-    while (this->currentTokenIndex < this->tokens.size() && (currentToken.raw == "*" || currentToken.raw == "/")) {
-        currentToken = this->tokens[this->currentTokenIndex];
+    while (this->currentTokenIndex < this->tokens.size() &&
+           (this->tokens[this->currentTokenIndex].raw == "*" || this->tokens[this->currentTokenIndex].raw == "/")) {
+        auto currentToken = this->tokens[this->currentTokenIndex];
 
-        this->currentTokenIndex++;
+        this->expect(Token::Type::OPERATOR);
 
-        auto right = this->factor();
-
-        left = std::make_unique<ExpressionNode>(std::move(left), std::move(right), currentToken.raw);
+        left = std::make_unique<ExpressionNode>(std::move(left), std::move(this->factor()), currentToken.raw);
     }
 
     return left;
@@ -100,16 +117,14 @@ std::unique_ptr<AstChild> Parser::term() {
 
 std::unique_ptr<AstChild> Parser::expression() {
     auto left = this->term();
-    auto currentToken = this->tokens[this->currentTokenIndex];
 
-    while (this->currentTokenIndex < this->tokens.size() && (currentToken.raw == "+" || currentToken.raw == "-")) {
-        currentToken = this->tokens[this->currentTokenIndex];
+    while (this->currentTokenIndex < this->tokens.size() &&
+           (this->tokens[this->currentTokenIndex].raw == "+" || this->tokens[this->currentTokenIndex].raw == "-")) {
+        auto currentToken = this->tokens[this->currentTokenIndex];
 
-        this->currentTokenIndex++;
+        this->expect(Token::Type::OPERATOR);
 
-        auto right = this->term();
-
-        left = std::make_unique<ExpressionNode>(std::move(left), std::move(right), currentToken.raw);
+        left = std::make_unique<ExpressionNode>(std::move(left), std::move(this->term()), currentToken.raw);
     }
 
     return left;

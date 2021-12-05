@@ -24,8 +24,16 @@
 
 class Scope {
 public:
+    explicit Scope(Scope *parent = nullptr) : parent(parent) {}
+
     // Variables in vector
     std::vector<std::pair<std::string, BasicValue>> variables;
+
+    // Functions in map (function name, function)
+    std::map<std::string, BasicValue> functions;
+
+    // The parent scope
+    Scope *parent;
 };
 
 class Interpreter {
@@ -35,8 +43,10 @@ private:
 public:
     AbstractSyntaxTree *ast;
 
-    Interpreter(AbstractSyntaxTree *ast) {
+    explicit Interpreter(AbstractSyntaxTree *ast) {
         this->ast = ast;
+
+        // Genesis Scope
         this->current_scope = new Scope();
     }
 
