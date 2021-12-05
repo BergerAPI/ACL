@@ -36,6 +36,22 @@ void Interpreter::interpretChild(AstChild *node) {
 
         this->current_scope->variables.emplace_back(realNode->name,
                                                     this->interpretExpression(realNode->value.release()));
+    } else if (node->getIdentifier() == "VariableAssignment") {
+        auto realNode = dynamic_cast<VariableAssignmentNode *>(node);
+
+        // We need to find the variable in the current scope
+        // Checking if the variable is defined in any scope above the current one
+        for (auto scope = this->current_scope; scope != nullptr; scope = scope->parent) {
+            for (auto &variable: scope->variables) {
+                if (variable.first == realNode->name) {
+                    variable.second = this->interpretExpression(realNode->value.release());
+                    return;
+                }
+            }
+        }
+
+        // If we get here, the variable is not defined
+        throw std::runtime_error("Variable " + realNode->name + " is not defined");
     }
 }
 

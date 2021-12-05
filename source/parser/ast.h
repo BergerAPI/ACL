@@ -161,6 +161,30 @@ public:
     }
 };
 
+class VariableAssignmentNode : public AstChild {
+public:
+    ~VariableAssignmentNode() override = default;
+
+    std::string name;
+    std::unique_ptr<AstChild> value;
+
+    // Constructor requires a name and a value
+    VariableAssignmentNode(std::string name, std::unique_ptr<AstChild> value) {
+        this->name = std::move(name);
+        this->value = std::move(value);
+    }
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "VariableAssignment";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(" << name << " ";
+        value->print();
+        std::cout << ")";
+    }
+};
+
 class FunctionCallNode : public AstChild {
 public:
     ~FunctionCallNode() override = default;

@@ -3,5 +3,7 @@ let a = "Is " + name
 let b = "really"
 let c = "cool?"
 
+c = "Naruto?"
+
 print(a, b, c)
 print("Length of name:", len(name))

@@ -44,6 +44,14 @@ std::unique_ptr<AstChild> Parser::identifier() {
         this->currentTokenIndex++;
 
         return std::make_unique<FunctionCallNode>(currentToken.raw, std::move(arguments));
+
+        // Variable Assignment
+    } else if (this->tokens[this->currentTokenIndex].type == Token::Type::EQUALS) {
+        this->currentTokenIndex++;
+
+        auto value = this->expression();
+
+        return std::make_unique<VariableAssignmentNode>(currentToken.raw, std::move(value));
     }
 
     return std::make_unique<VariableReferenceNode>(currentToken.raw);
