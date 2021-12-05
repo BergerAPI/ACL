@@ -73,8 +73,8 @@ std::vector<Token> Lexer::tokenize(std::istream &input) {
                 i--;
 
                 // Checking for keywords
-                if (identifier == "if" || identifier == "else" || identifier == "while" || identifier == "print" ||
-                    identifier == "function" || identifier == "return")
+                if (identifier == "if" || identifier == "else" || identifier == "while" ||
+                    identifier == "function" || identifier == "return" || identifier == "var")
                     tokens.emplace_back(Token::Type::KEYWORD, identifier, line_index);
                 else tokens.emplace_back(Token::Type::IDENTIFIER, identifier, line_index);
 
@@ -120,6 +120,11 @@ std::vector<Token> Lexer::tokenize(std::istream &input) {
 
             if (c == ':') {
                 tokens.emplace_back(Token::Type::COLON, std::string(1, c), line_index);
+                continue;
+            }
+
+            if (c == '=') {
+                tokens.emplace_back(Token::Type::EQUALS, std::string(1, c), line_index);
                 continue;
             }
 

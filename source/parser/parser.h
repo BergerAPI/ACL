@@ -25,16 +25,28 @@ class Parser {
     int currentTokenIndex = 0;
     std::vector<AstChild *> children;
 
+    /**
+     * Expressions
+     */
     std::unique_ptr<AstChild> factor();
-
     std::unique_ptr<AstChild> term();
-
     std::unique_ptr<AstChild> expression();
 
+    /**
+     * Statements
+     */
+    std::unique_ptr<AstChild> variableDefinition();
+
+    /**
+     * Identifier
+     */
+    std::unique_ptr<AstChild> identifier();
+
+    /**
+     * Important functions
+     */
     void expect(Token::Type type);
-
     Token getCurrentToken();
-
     [[maybe_unused]] Token peekNextToken();
 
 public:

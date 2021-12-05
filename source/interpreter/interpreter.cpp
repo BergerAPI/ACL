@@ -16,28 +16,33 @@
 
 #include "interpreter.h"
 
-void Interpreter::interpret(AbstractSyntaxTree *ast) {
+void Interpreter::interpret() {
     // Interpreting all children in the AST
-    for (auto child: ast->children) {
-        interpretChild(child);
+    for (auto child: this->ast->children) {
+        this->interpretChild(child);
     }
 }
 
 void Interpreter::interpretChild(AstChild *node) {
     // Interpret the child node
     if (node->getIdentifier() == "Expression" || node->getIdentifier() == "NumberLiteral" ||
-        node->getIdentifier() == "Unary" || node->getIdentifier() == "StringLiteral") {
+        node->getIdentifier() == "Unary" || node->getIdentifier() == "StringLiteral" || node->getIdentifier() == "VariableReference") {
         // We need to calculate the value of the expression
         // and store it in the value field of the node
-        std::cout << interpretExpression(node) << std::endl;
+        std::cout << this->interpretExpression(node) << std::endl;
+    } else if (node->getIdentifier() == "VariableDefinition") {
+        auto realNode = dynamic_cast<VariableDefinitionNode *>(node);
+
+        this->current_scope->variables.emplace_back(realNode->name,
+                                                    this->interpretExpression(realNode->value.release()));
     }
 }
 
 BasicValue Interpreter::interpretExpression(AstChild *node) {
     if (node->getIdentifier() == "Expression") {
         auto *realNode = dynamic_cast<ExpressionNode *>(node);
-        auto left = interpretExpression(realNode->left.release());
-        auto right = interpretExpression(realNode->right.release());
+        auto left = this->interpretExpression(realNode->left.release());
+        auto right = this->interpretExpression(realNode->right.release());
 
         if (left.type == BasicValue::Type::INT && right.type == BasicValue::Type::INT) {
             if (realNode->op == "+") return BasicValue(left.intValue + right.intValue);
@@ -60,7 +65,7 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
         return BasicValue((dynamic_cast<StringLiteralNode *>(node))->value);
     else if (node->getIdentifier() == "Unary") {
         auto realNode = dynamic_cast<UnaryExpressionNode *>(node);
-        BasicValue value = interpretExpression(realNode->child.release());
+        BasicValue value = this->interpretExpression(realNode->child.release());
 
         if (value.type == BasicValue::Type::INT) {
             if (realNode->op == "-")
@@ -68,6 +73,17 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
 
             return BasicValue(value.intValue);
         } else throw std::runtime_error("Cannot perform unary operation on non-integer values");
+    } else if (node->getIdentifier() == "VariableReference") {
+        auto realNode = dynamic_cast<VariableReferenceNode *>(node);
+
+        // Checking if the variable is defined in the current scope
+        for (auto &variable: this->current_scope->variables) {
+            if (variable.first == realNode->name) {
+                return variable.second;
+            }
+        }
+
+        throw std::runtime_error("Variable " + realNode->name + " is not defined");
     }
 
     throw std::runtime_error("Cannot interpret expression");

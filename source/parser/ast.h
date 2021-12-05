@@ -119,6 +119,48 @@ public:
     }
 };
 
+class VariableDefinitionNode : public AstChild {
+public:
+    ~VariableDefinitionNode() override = default;
+
+    std::string name;
+    std::unique_ptr<AstChild> value;
+
+    // Constructor requires a name and a value
+    VariableDefinitionNode(std::string name, std::unique_ptr<AstChild> value) {
+        this->name = std::move(name);
+        this->value = std::move(value);
+    }
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "VariableDefinition";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(" << name << " ";
+        value->print();
+        std::cout << ")";
+    }
+};
+
+class VariableReferenceNode : public AstChild {
+public:
+    ~VariableReferenceNode() override = default;
+
+    std::string name;
+
+    // Constructor requires a name
+    explicit VariableReferenceNode(std::string name) : name(std::move(name)) {}
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "VariableReference";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(" << name << ")";
+    }
+};
+
 class AbstractSyntaxTree {
 public:
     virtual ~AbstractSyntaxTree() = default;

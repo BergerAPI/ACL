@@ -17,19 +17,44 @@
 #include "parser.h"
 #include <memory>
 
-std::unique_ptr<AstChild> Parser::factor() {
-    Token currentToken = this->tokens[this->currentTokenIndex];
+std::unique_ptr<AstChild> Parser::identifier() {
+    auto currentToken = this->tokens[this->currentTokenIndex];
 
     this->currentTokenIndex++;
 
+    // Function call
+    if (this->tokens[this->currentTokenIndex].type == Token::Type::LEFT_PAREN) {
+        throw std::runtime_error("Function call not implemented yet");
+    }
+
+    return std::make_unique<VariableReferenceNode>(currentToken.raw);
+}
+
+std::unique_ptr<AstChild> Parser::variableDefinition() {
+    this->currentTokenIndex++;
+
+    auto variableName = this->tokens[this->currentTokenIndex].raw;
+
+    this->expect(Token::Type::IDENTIFIER);
+    this->expect(Token::Type::EQUALS);
+
+    return std::make_unique<VariableDefinitionNode>(variableName, std::move(this->expression()));
+}
+
+std::unique_ptr<AstChild> Parser::factor() {
+    auto currentToken = this->tokens[this->currentTokenIndex];
+
     switch (currentToken.type) {
         case Token::Type::NUMBER:
+            this->currentTokenIndex++;
             return std::make_unique<NumberLiteralNode>(std::stoi(currentToken.raw));
 
         case Token::Type::STRING:
+            this->currentTokenIndex++;
             return std::make_unique<StringLiteralNode>(currentToken.raw);
 
         case Token::Type::LEFT_PAREN: {
+            this->currentTokenIndex++;
             auto expr = this->expression();
             this->expect(Token::Type::RIGHT_PAREN);
 
@@ -37,6 +62,8 @@ std::unique_ptr<AstChild> Parser::factor() {
         }
 
         case Token::Type::OPERATOR: {
+            this->currentTokenIndex++;
+
             // Unary operator
             if (currentToken.raw == "-" || currentToken.raw == "+") {
                 auto expr = this->factor();
@@ -51,17 +78,21 @@ std::unique_ptr<AstChild> Parser::factor() {
             break;
     }
 
-    throw std::runtime_error("Unexpected token: " + currentToken.raw);
+    return this->identifier();
 }
 
 std::unique_ptr<AstChild> Parser::term() {
     auto left = this->factor();
-    Token currentToken = this->tokens[this->currentTokenIndex];
+    auto currentToken = this->tokens[this->currentTokenIndex];
 
     while (this->currentTokenIndex < this->tokens.size() && (currentToken.raw == "*" || currentToken.raw == "/")) {
-        this->currentTokenIndex++;
-        left = std::make_unique<ExpressionNode>(std::move(left), std::move(this->factor()), currentToken.raw);
         currentToken = this->tokens[this->currentTokenIndex];
+
+        this->currentTokenIndex++;
+
+        auto right = this->factor();
+
+        left = std::make_unique<ExpressionNode>(std::move(left), std::move(right), currentToken.raw);
     }
 
     return left;
@@ -69,22 +100,16 @@ std::unique_ptr<AstChild> Parser::term() {
 
 std::unique_ptr<AstChild> Parser::expression() {
     auto left = this->term();
+    auto currentToken = this->tokens[this->currentTokenIndex];
 
-    while (this->currentTokenIndex < this->tokens.size()) {
-        Token currentToken = this->tokens[this->currentTokenIndex];
+    while (this->currentTokenIndex < this->tokens.size() && (currentToken.raw == "+" || currentToken.raw == "-")) {
+        currentToken = this->tokens[this->currentTokenIndex];
 
-        if (currentToken.type == Token::Type::OPERATOR) {
-            this->currentTokenIndex++;
+        this->currentTokenIndex++;
 
-            if (currentToken.raw == "+" || currentToken.raw == "-") {
-                auto right = this->term();
-                left = std::make_unique<ExpressionNode>(std::move(left), std::move(right), currentToken.raw);
-            } else {
-                throw std::runtime_error("Unexpected token: " + currentToken.raw + ", we are parsing an expression");
-            }
-        } else {
-            break;
-        }
+        auto right = this->term();
+
+        left = std::make_unique<ExpressionNode>(std::move(left), std::move(right), currentToken.raw);
     }
 
     return left;
@@ -94,9 +119,10 @@ AbstractSyntaxTree *Parser::parse() {
     auto *ast = new AbstractSyntaxTree();
 
     while (this->currentTokenIndex < this->tokens.size()) {
-        auto token = tokens[this->currentTokenIndex];
+        auto token = this->tokens[this->currentTokenIndex];
 
         switch (token.type) {
+            case Token::Type::IDENTIFIER:
             case Token::Type::STRING:
             case Token::Type::LEFT_PAREN:
             case Token::Type::OPERATOR:
@@ -107,6 +133,18 @@ AbstractSyntaxTree *Parser::parse() {
                 // Add to AST
                 this->children.push_back(expr.release());
             }
+                break;
+
+            case Token::Type::KEYWORD:
+                if (token.raw == "var") {
+                    // Variable definition
+                    auto varDef = this->variableDefinition();
+
+                    // Add to AST
+                    this->children.push_back(varDef.release());
+                } else {
+                    throw std::runtime_error("Keyword not implemented: " + token.raw);
+                }
                 break;
 
             default:

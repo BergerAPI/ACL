@@ -18,16 +18,33 @@
 #define ACL_INTERPRETER_H
 
 
+#include <map>
 #include "../parser/ast.h"
 #include "type.h"
 
-class Interpreter {
+class Scope {
 public:
-    static void interpret(AbstractSyntaxTree *ast);
+    // Variables in vector
+    std::vector<std::pair<std::string, BasicValue>> variables;
+};
 
-    static void interpretChild(AstChild *node);
+class Interpreter {
+private:
+    Scope *current_scope;
 
-    static BasicValue interpretExpression(AstChild *node);
+public:
+    AbstractSyntaxTree *ast;
+
+    Interpreter(AbstractSyntaxTree *ast) {
+        this->ast = ast;
+        this->current_scope = new Scope();
+    }
+
+    void interpret();
+
+    void interpretChild(AstChild *node);
+
+    BasicValue interpretExpression(AstChild *node);
 };
 
 
