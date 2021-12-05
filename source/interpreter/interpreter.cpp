@@ -142,6 +142,57 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
                 throw std::runtime_error("len() can only be used on strings and lists");
 
             return BasicValue(std::to_string(basic_value.stringValue.size()));
+        } else if (realNode->name == "readFile") {
+            // Reading a file
+            if (realNode->args.size() != 1)
+                throw std::runtime_error("file() takes exactly one argument");
+
+            auto basic_value = this->interpretExpression(realNode->args[0].release());
+
+            if (basic_value.type != BasicValue::Type::STRING)
+                throw std::runtime_error("file() can only be used on strings");
+
+            // Reading the file
+            std::ifstream file(basic_value.stringValue);
+
+            if (!file.is_open())
+                throw std::runtime_error("Could not open file " + basic_value.stringValue);
+
+            std::string value;
+
+            while (file.good()) {
+                std::string line;
+                std::getline(file, line);
+                value += line + "\n";
+            }
+
+            return BasicValue(value);
+        } else if (realNode->name == "writeFile") {
+            // Writing a file
+            if (realNode->args.size() != 2)
+                throw std::runtime_error("file() takes exactly two arguments");
+
+            auto file_name = this->interpretExpression(realNode->args[0].release());
+
+            if (file_name.type != BasicValue::Type::STRING)
+                throw std::runtime_error("file() can only be used on strings");
+
+            auto content = this->interpretExpression(realNode->args[1].release());
+
+            if (content.type != BasicValue::Type::STRING)
+                throw std::runtime_error("file() can only be used on strings");
+
+            // Writing the file
+            std::ofstream file(file_name.stringValue);
+
+            // Create the file if it does not exist
+            if (!file.is_open()) {
+                file.open(file_name.stringValue, std::ios::out | std::ios::trunc);
+            }
+
+            file << content.stringValue;
+
+            return BasicValue(1);
         }
 
         throw std::runtime_error("Function " + realNode->name + " is not defined");

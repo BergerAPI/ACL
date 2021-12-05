@@ -21,6 +21,7 @@
 #include <map>
 #include "../parser/ast.h"
 #include "type.h"
+#include <fstream>
 
 class Scope {
 public:

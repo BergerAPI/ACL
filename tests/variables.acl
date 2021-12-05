@@ -1,5 +1,7 @@
+print("Welcome! Please type in your name: ")
+
 let name = input()
-let a = "Is " + name
+let a = "Are you (" + name + ")"
 let b = "really"
 let c = "cool?"
 
