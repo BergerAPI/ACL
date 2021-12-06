@@ -40,6 +40,8 @@ class Parser {
     std::unique_ptr<AstChild> whileStatement();
     std::unique_ptr<AstChild> forStatement();
 
+    std::unique_ptr<AstChild> functionDefinition();
+
     /**
      * Identifier
      */

@@ -352,6 +352,39 @@ public:
     }
 };
 
+class FunctionDefinitionNode : public AstChild {
+public:
+    ~FunctionDefinitionNode() override = default;
+
+    std::string name;
+    std::vector<std::string> parameters;
+    std::vector<std::unique_ptr<AstChild>> body;
+
+    // Constructor requires a name, args and body
+    FunctionDefinitionNode(std::string name, std::vector<std::string> parameters, std::vector<std::unique_ptr<AstChild>> body) {
+        this->name = std::move(name);
+        this->parameters = std::move(parameters);
+        this->body = std::move(body);
+    }
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "FunctionDefinition";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(" << name << " ";
+        for (auto &arg: parameters) {
+            std::cout << arg << " ";
+        }
+        std::cout << " ";
+        for (auto &statement: body) {
+            statement->print();
+            std::cout << " ";
+        }
+        std::cout << ")";
+    }
+};
+
 class AbstractSyntaxTree {
 public:
     virtual ~AbstractSyntaxTree() = default;

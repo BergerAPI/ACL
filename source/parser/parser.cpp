@@ -17,6 +17,42 @@
 #include "parser.h"
 #include <memory>
 
+std::unique_ptr<AstChild> Parser::functionDefinition() {
+    this->currentTokenIndex++;
+
+    auto functionName = this->tokens[this->currentTokenIndex].raw;
+
+    this->currentTokenIndex++;
+
+    this->expect(Token::Type::LEFT_PAREN);
+
+    std::vector<std::string> parameters;
+    std::vector<std::unique_ptr<AstChild>> body;
+
+    while (this->currentTokenIndex < this->tokens.size() && this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_PAREN) {
+        auto currentToken = this->tokens[this->currentTokenIndex];
+
+        if (currentToken.type != Token::Type::IDENTIFIER) {
+            throw std::runtime_error("Expected identifier");
+        }
+
+        parameters.push_back(currentToken.raw);
+
+        this->currentTokenIndex++;
+    }
+
+    this->expect(Token::Type::RIGHT_PAREN);
+    this->expect(Token::Type::LEFT_BRACE);
+
+    while (this->currentTokenIndex < this->tokens.size() &&
+           this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_BRACE) {
+        body.emplace_back(this->parseChild());
+    }
+
+    this->expect(Token::Type::RIGHT_BRACE);
+
+    return std::make_unique<FunctionDefinitionNode>(std::move(functionName), std::move(parameters), std::move(body));
+}
 
 std::unique_ptr<AstChild> Parser::forStatement() {
     this->currentTokenIndex++;
@@ -301,6 +337,7 @@ std::unique_ptr<AstChild> Parser::parseChild() {
             else if (token.raw == "if") return this->ifStatement();
             else if (token.raw == "while") return this->whileStatement();
             else if (token.raw == "for") return this->forStatement();
+            else if (token.raw == "func") return this->functionDefinition();
             else if (token.raw == "break") {
                 this->currentTokenIndex++;
                 return std::make_unique<BreakStatementNode>();

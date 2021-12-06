@@ -158,6 +158,16 @@ void Interpreter::interpretChild(AstChild *node) {
 
         // back to the parent scope
         this->current_scope = this->current_scope->parent;
+    } else if (node->getIdentifier() == "FunctionDefinition") {
+        auto realNode = dynamic_cast<FunctionDefinitionNode *>(node);
+
+        // Printing all existing functions
+        for (const auto &item: this->current_scope->functions) {
+            std::cout << item.name << std::endl;
+        }
+
+        // Adding to the current scope
+        this->current_scope->functions.emplace_back(realNode->name, &realNode->parameters, &realNode->body);
     }
 }
 
@@ -448,6 +458,40 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
 
             return BasicValue(values);
         }
+
+        // Searching in the all the scopes above the current scope
+        for (auto scope = this->current_scope; scope != nullptr; scope = scope->parent) {
+            for (const auto &item: scope->functions) {
+                if (item.name == realNode->name) {
+                    // Checking the arguments
+                    if (item.parameters->size() != realNode->args.size())
+                        throw std::runtime_error("Wrong number of arguments");
+
+                    // new scope
+                    this->current_scope = new Scope(this->current_scope);
+
+                    // We need to add the parameters to the scope
+                    auto index = 0;
+
+                    for (auto &parameter: *item.parameters) {
+                        this->current_scope->variables.emplace_back(parameter,
+                                                                    this->interpretExpression(
+                                                                            realNode->args[index].get()));
+                        index++;
+                    }
+
+                    // Interpreting
+                    for (const auto &bodyNode: *item.body)
+                        this->interpretChild(bodyNode.get());
+
+                    // back to the parent scope
+                    this->current_scope = this->current_scope->parent;
+
+                    return BasicValue();
+                }
+            }
+        }
+
 
         throw std::runtime_error("Function " + realNode->name + " is not defined");
     }

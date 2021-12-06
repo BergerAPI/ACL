@@ -22,6 +22,16 @@
 #include "../parser/ast.h"
 #include "type.h"
 #include <fstream>
+#include <utility>
+
+class InterpreterFunction {
+public:
+    std::string name;
+    std::vector<std::string> *parameters;
+    std::vector<std::unique_ptr<AstChild>> *body;
+
+    explicit InterpreterFunction(std::string name, std::vector<std::string> *parameters, std::vector<std::unique_ptr<AstChild>> *body) : name(std::move(name)), parameters(std::move(parameters)), body(std::move(body)) {}
+};
 
 class Scope {
 public:
@@ -31,7 +41,7 @@ public:
     std::vector<std::pair<std::string, BasicValue>> variables;
 
     // Functions in map (function name, function)
-    std::map<std::string, BasicValue> functions;
+    std::vector<InterpreterFunction> functions;
 
     // The parent scope
     Scope *parent;

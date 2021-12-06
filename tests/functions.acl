@@ -1,0 +1,5 @@
+func test(param1) {
+    print("Naruto: " + param1)
+}
+
+test("Tturna")
