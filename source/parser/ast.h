@@ -264,6 +264,35 @@ public:
     }
 };
 
+class WhileStatementNode : public AstChild {
+public:
+    ~WhileStatementNode() override = default;
+
+    std::unique_ptr<AstChild> condition;
+    std::vector<std::unique_ptr<AstChild>> body;
+
+    // Constructor requires a condition and a body
+    WhileStatementNode(std::unique_ptr<AstChild> condition, std::vector<std::unique_ptr<AstChild>> body) {
+        this->condition = std::move(condition);
+        this->body = std::move(body);
+    }
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "WhileStatement";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(";
+        condition->print();
+        std::cout << " ";
+        for (auto &statement: body) {
+            statement->print();
+            std::cout << " ";
+        }
+        std::cout << ")";
+    }
+};
+
 class AbstractSyntaxTree {
 public:
     virtual ~AbstractSyntaxTree() = default;

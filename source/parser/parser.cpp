@@ -17,6 +17,25 @@
 #include "parser.h"
 #include <memory>
 
+
+std::unique_ptr<AstChild> Parser::whileStatement() {
+    this->currentTokenIndex++;
+
+    auto condition = this->expression();
+    std::vector<std::unique_ptr<AstChild>> thenStatements;
+
+    this->expect(Token::Type::LEFT_BRACE);
+
+    while (this->currentTokenIndex < this->tokens.size() &&
+           this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_BRACE) {
+        thenStatements.emplace_back(this->parseChild());
+    }
+
+    this->expect(Token::Type::RIGHT_BRACE);
+
+    return std::make_unique<WhileStatementNode>(std::move(condition), std::move(thenStatements));
+}
+
 std::unique_ptr<AstChild> Parser::ifStatement() {
     this->currentTokenIndex++;
 
@@ -255,6 +274,8 @@ std::unique_ptr<AstChild> Parser::parseChild() {
             } else if (token.raw == "if") {
                 // If statement
                 return this->ifStatement();
+            } else if (token.raw == "while") {
+                return this->whileStatement();
             } else {
                 throw std::runtime_error("Keyword not implemented: " + token.raw);
             }
@@ -262,6 +283,4 @@ std::unique_ptr<AstChild> Parser::parseChild() {
         default:
             throw std::runtime_error("Unknown token type: " + std::to_string(static_cast<int>(token.type)));
     }
-
-    throw std::runtime_error("Not implemented");
 }

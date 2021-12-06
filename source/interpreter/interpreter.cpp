@@ -36,7 +36,7 @@ void Interpreter::interpretChild(AstChild *node) {
         auto realNode = dynamic_cast<VariableDefinitionNode *>(node);
 
         this->current_scope->variables.emplace_back(realNode->name,
-                                                    this->interpretExpression(realNode->value.release()));
+                                                    this->interpretExpression(realNode->value.get()));
     } else if (node->getIdentifier() == "VariableAssignment") {
         auto realNode = dynamic_cast<VariableAssignmentNode *>(node);
 
@@ -45,7 +45,7 @@ void Interpreter::interpretChild(AstChild *node) {
         for (auto scope = this->current_scope; scope != nullptr; scope = scope->parent) {
             for (auto &variable: scope->variables) {
                 if (variable.first == realNode->name) {
-                    variable.second = this->interpretExpression(realNode->value.release());
+                    variable.second = this->interpretExpression(realNode->value.get());
                     return;
                 }
             }
@@ -57,15 +57,27 @@ void Interpreter::interpretChild(AstChild *node) {
         auto realNode = dynamic_cast<IfStatementNode *>(node);
 
         // We need to check if the condition is true
-        if (this->interpretExpression(realNode->condition.release()).intValue == 1) {
+        if (this->interpretExpression(realNode->condition.get()).intValue == 1) {
             // If it is, we need to interpret the true branch
             for (auto &item: realNode->thenBranch) {
-                this->interpretChild(item.release());
+                this->interpretChild(item.get());
             }
         } else {
             // If it is not, we need to interpret the false branch
             for (auto &item: realNode->elseBranch) {
-                this->interpretChild(item.release());
+                this->interpretChild(item.get());
+            }
+        }
+    } else if (node->getIdentifier() == "WhileStatement") {
+        // We need to node without deleting the original node
+        auto realNode = dynamic_cast<WhileStatementNode *>(node);
+        auto condition = std::move(realNode->condition).get();
+
+        // We need to check if the condition is true
+        while (this->interpretExpression(condition).intValue == 1) {
+            // If it is, we need to interpret the true branch
+            for (auto &item: realNode->body) {
+                this->interpretChild(item.get());
             }
         }
     }
@@ -74,73 +86,80 @@ void Interpreter::interpretChild(AstChild *node) {
 BasicValue Interpreter::interpretExpression(AstChild *node) {
     if (node->getIdentifier() == "Expression") {
         auto *realNode = dynamic_cast<ExpressionNode *>(node);
-        auto left = this->interpretExpression(realNode->left.release());
-        auto right = this->interpretExpression(realNode->right.release());
+
+        auto left = this->interpretExpression(realNode->left.get());
+        auto right = this->interpretExpression(realNode->right.get());
+        auto op = realNode->op;
 
         if (left.type == BasicValue::Type::INT && right.type == BasicValue::Type::INT) {
-            if (realNode->op == "+") return BasicValue(left.intValue + right.intValue);
-            else if (realNode->op == "-") return BasicValue(left.intValue - right.intValue);
-            else if (realNode->op == "*") return BasicValue(left.intValue * right.intValue);
-            else if (realNode->op == "/") return BasicValue(left.intValue / right.intValue);
-            else if (realNode->op == "%") return BasicValue(left.intValue % right.intValue);
-            else if (realNode->op == "==") return BasicValue(left.intValue == right.intValue);
-            else if (realNode->op == "!=") return BasicValue(left.intValue != right.intValue);
-            else if (realNode->op == "<") return BasicValue(left.intValue < right.intValue);
-            else if (realNode->op == ">") return BasicValue(left.intValue > right.intValue);
-            else if (realNode->op == "<=") return BasicValue(left.intValue <= right.intValue);
-            else if (realNode->op == ">=") return BasicValue(left.intValue >= right.intValue);
-            else if (realNode->op == "&&") return BasicValue(left.intValue && right.intValue);
-            else if (realNode->op == "||") return BasicValue(left.intValue || right.intValue);
-            else throw std::runtime_error("Unknown operator " + realNode->op);
+            if (op == "+") return BasicValue(left.intValue + right.intValue);
+            else if (op == "-") return BasicValue(left.intValue - right.intValue);
+            else if (op == "*") return BasicValue(left.intValue * right.intValue);
+            else if (op == "/") return BasicValue(left.intValue / right.intValue);
+            else if (op == "%") return BasicValue(left.intValue % right.intValue);
+            else if (op == "==") return BasicValue(left.intValue == right.intValue);
+            else if (op == "!=") return BasicValue(left.intValue != right.intValue);
+            else if (op == "<") return BasicValue(left.intValue < right.intValue);
+            else if (op == ">") return BasicValue(left.intValue > right.intValue);
+            else if (op == "<=") return BasicValue(left.intValue <= right.intValue);
+            else if (op == ">=") return BasicValue(left.intValue >= right.intValue);
+            else if (op == "&&") return BasicValue(left.intValue && right.intValue);
+            else if (op == "||") return BasicValue(left.intValue || right.intValue);
+            else throw std::runtime_error("Unknown operator " + op);
         } else if (left.type == BasicValue::Type::STRING && right.type == BasicValue::Type::STRING) {
-            if (realNode->op == "+") return BasicValue(left.stringValue + right.stringValue);
-            else if (realNode->op == "==") return BasicValue(left.stringValue == right.stringValue);
-            else if (realNode->op == "!=") return BasicValue(left.stringValue != right.stringValue);
+            if (op == "+") return BasicValue(left.stringValue + right.stringValue);
+            else if (op == "==") return BasicValue(left.stringValue == right.stringValue);
+            else if (op == "!=") return BasicValue(left.stringValue != right.stringValue);
             else throw std::runtime_error("Cannot divide, multiply two strings");
         } else if (left.type == BasicValue::Type::INT && right.type == BasicValue::Type::STRING) {
-            if (realNode->op == "+") return BasicValue(std::to_string(left.intValue) + right.stringValue);
-            else if (realNode->op == "==") return BasicValue(std::to_string(left.intValue) == right.stringValue);
-            else if (realNode->op == "!=") return BasicValue(std::to_string(left.intValue) != right.stringValue);
+            if (op == "+") return BasicValue(std::to_string(left.intValue) + right.stringValue);
+            else if (op == "==") return BasicValue(std::to_string(left.intValue) == right.stringValue);
+            else if (op == "!=") return BasicValue(std::to_string(left.intValue) != right.stringValue);
             else throw std::runtime_error("Cannot divide, multiply two strings");
         } else if (left.type == BasicValue::Type::STRING && right.type == BasicValue::Type::INT) {
-            if (realNode->op == "+") return BasicValue(left.stringValue + std::to_string(right.intValue));
-            else if (realNode->op == "==") return BasicValue(left.stringValue == std::to_string(right.intValue));
-            else if (realNode->op == "!=") return BasicValue(left.stringValue != std::to_string(right.intValue));
+            if (op == "+") return BasicValue(left.stringValue + std::to_string(right.intValue));
+            else if (op == "==") return BasicValue(left.stringValue == std::to_string(right.intValue));
+            else if (op == "!=") return BasicValue(left.stringValue != std::to_string(right.intValue));
             else throw std::runtime_error("Cannot divide, multiply two strings");
-        } else if (left.type == BasicValue::Type::FLOAT || right.type == BasicValue::Type::FLOAT) {
-            if (realNode->op == "+") return BasicValue(left.floatValue + right.floatValue);
-            else if (realNode->op == "-") return BasicValue(left.floatValue - right.floatValue);
-            else if (realNode->op == "*") return BasicValue(left.floatValue * right.floatValue);
-            else if (realNode->op == "/") return BasicValue(left.floatValue / right.floatValue);
-            else if (realNode->op == "==") return BasicValue(left.floatValue == right.floatValue);
-            else if (realNode->op == "!=") return BasicValue(left.floatValue != right.floatValue);
-            else if (realNode->op == "<") return BasicValue(left.floatValue < right.floatValue);
-            else if (realNode->op == ">") return BasicValue(left.floatValue > right.floatValue);
-            else if (realNode->op == "<=") return BasicValue(left.floatValue <= right.floatValue);
-            else if (realNode->op == ">=") return BasicValue(left.floatValue >= right.floatValue);
-            else throw std::runtime_error("Unknown operator " + realNode->op);
-        } else if (left.type == BasicValue::Type::STRING || right.type == BasicValue::Type::FLOAT) {
-            if (realNode->op == "+") return BasicValue(left.stringValue + std::to_string(right.floatValue));
-            else if (realNode->op == "==") return BasicValue(left.stringValue == std::to_string(right.floatValue));
-            else if (realNode->op == "!=") return BasicValue(left.stringValue != std::to_string(right.floatValue));
+        } else if (left.type == BasicValue::Type::FLOAT && right.type == BasicValue::Type::FLOAT) {
+            std::cout << "left: " << left.floatValue << " right: " << right.floatValue << std::endl;
+
+            if (op == "+") return BasicValue(left.floatValue + right.floatValue);
+            else if (op == "-") return BasicValue(left.floatValue - right.floatValue);
+            else if (op == "*") return BasicValue(left.floatValue * right.floatValue);
+            else if (op == "/") return BasicValue(left.floatValue / right.floatValue);
+            else if (op == "==") return BasicValue(left.floatValue == right.floatValue);
+            else if (op == "!=") return BasicValue(left.floatValue != right.floatValue);
+            else if (op == "<") return BasicValue(left.floatValue < right.floatValue);
+            else if (op == ">") return BasicValue(left.floatValue > right.floatValue);
+            else if (op == "<=") return BasicValue(left.floatValue <= right.floatValue);
+            else if (op == ">=") return BasicValue(left.floatValue >= right.floatValue);
+            else throw std::runtime_error("Unknown operator " + op);
+        } else if (left.type == BasicValue::Type::STRING && right.type == BasicValue::Type::FLOAT) {
+            if (op == "+") return BasicValue(left.stringValue + std::to_string(right.floatValue));
+            else if (op == "==") return BasicValue(left.stringValue == std::to_string(right.floatValue));
+            else if (op == "!=") return BasicValue(left.stringValue != std::to_string(right.floatValue));
             else throw std::runtime_error("Cannot divide, multiply two strings");
-        } else if (left.type == BasicValue::Type::FLOAT || right.type == BasicValue::Type::STRING) {
-            if (realNode->op == "+") return BasicValue(std::to_string(left.floatValue) + right.stringValue);
-            else if (realNode->op == "==") return BasicValue(std::to_string(left.floatValue) == right.stringValue);
-            else if (realNode->op == "!=") return BasicValue(std::to_string(left.floatValue) != right.stringValue);
+        } else if (left.type == BasicValue::Type::FLOAT && right.type == BasicValue::Type::STRING) {
+            if (op == "+") return BasicValue(std::to_string(left.floatValue) + right.stringValue);
+            else if (op == "==") return BasicValue(std::to_string(left.floatValue) == right.stringValue);
+            else if (op == "!=") return BasicValue(std::to_string(left.floatValue) != right.stringValue);
             else throw std::runtime_error("Cannot divide, multiply two strings");
         }
 
         throw std::runtime_error("Cannot perform math operation on non-integer values");
-    } else if (node->getIdentifier() == "IntegerLiteral")
-        return BasicValue((dynamic_cast<IntegerLiteralNode *>(node))->value);
-    else if (node->getIdentifier() == "FloatLiteral")
-        return BasicValue((dynamic_cast<FloatLiteralNode *>(node))->value);
-    else if (node->getIdentifier() == "StringLiteral")
-        return BasicValue((dynamic_cast<StringLiteralNode *>(node))->value);
-    else if (node->getIdentifier() == "Unary") {
+    } else if (node->getIdentifier() == "IntegerLiteral") {
+        auto realNode = dynamic_cast<IntegerLiteralNode *>(node);
+        return BasicValue(realNode->value);
+    } else if (node->getIdentifier() == "FloatLiteral") {
+        auto realNode = dynamic_cast<FloatLiteralNode *>(node);
+        return BasicValue(realNode->value);
+    } else if (node->getIdentifier() == "StringLiteral") {
+        auto realNode = dynamic_cast<StringLiteralNode *>(node);
+        return BasicValue(realNode->value);
+    } else if (node->getIdentifier() == "Unary") {
         auto realNode = dynamic_cast<UnaryExpressionNode *>(node);
-        BasicValue value = this->interpretExpression(realNode->child.release());
+        BasicValue value = this->interpretExpression(realNode->child.get());
 
         if (value.type == BasicValue::Type::INT) {
             if (realNode->op == "-")
@@ -173,7 +192,7 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             int index = 0;
 
             for (auto &item: realNode->args) {
-                auto expression = this->interpretExpression(item.release());
+                auto expression = this->interpretExpression(item.get());
 
                 switch (expression.type) {
                     case BasicValue::Type::INT:
@@ -195,20 +214,22 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             }
 
             std::cout << value << std::endl;
-            return BasicValue(1);
+            return BasicValue();
         } else if (realNode->name == "input") {
             if (!realNode->args.empty())
                 throw std::runtime_error("input() takes no arguments");
 
+            // Reading the entire line
             std::string value;
-            std::cin >> value;
+
+            std::getline(std::cin, value);
 
             return BasicValue(value);
         } else if (realNode->name == "len") {
             if (realNode->args.size() != 1)
                 throw std::runtime_error("len() takes exactly one argument");
 
-            auto basic_value = this->interpretExpression(realNode->args[0].release());
+            auto basic_value = this->interpretExpression(realNode->args[0].get());
 
             if (basic_value.type != BasicValue::Type::STRING)
                 throw std::runtime_error("len() can only be used on strings and lists");
@@ -220,7 +241,7 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             if (realNode->args.size() != 1)
                 throw std::runtime_error("file() takes exactly one argument");
 
-            auto basic_value = this->interpretExpression(realNode->args[0].release());
+            auto basic_value = this->interpretExpression(realNode->args[0].get());
 
             if (basic_value.type != BasicValue::Type::STRING)
                 throw std::runtime_error("file() can only be used on strings");
@@ -245,12 +266,12 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             if (realNode->args.size() != 2)
                 throw std::runtime_error("file() takes exactly two arguments");
 
-            auto file_name = this->interpretExpression(realNode->args[0].release());
+            auto file_name = this->interpretExpression(realNode->args[0].get());
 
             if (file_name.type != BasicValue::Type::STRING)
                 throw std::runtime_error("file() can only be used on strings");
 
-            auto content = this->interpretExpression(realNode->args[1].release());
+            auto content = this->interpretExpression(realNode->args[1].get());
 
             if (content.type != BasicValue::Type::STRING)
                 throw std::runtime_error("file() can only be used on strings");
@@ -265,14 +286,17 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
 
             file << content.stringValue;
 
-            return BasicValue(1);
+            return BasicValue();
         } else if (realNode->name == "time") {
             if (!realNode->args.empty())
                 throw std::runtime_error("time() takes no arguments");
 
-            // We need the time as float (milliseconds)
-            return BasicValue(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::system_clock::now().time_since_epoch()).count()));
+            // We need the time in seconds
+            auto string = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count() / 1000.0);
+
+            // converting to float
+            return BasicValue(std::stoi(string));
         }
 
         throw std::runtime_error("Function " + realNode->name + " is not defined");
