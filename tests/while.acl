@@ -1,10 +1,25 @@
 print("starting while")
 
 let i = 0
+let m = 0
 let startTime = time()
 
-while i < 1000000 {
-    # print(i)
+while 1 {
+    if i > 1000 {
+        break
+    }
+
+    while 1 {
+        if m > 1000 {
+            m = 0
+            break
+        }
+
+        # print("m", m)
+        m = m + 1
+    }
+
+    # print("i", i)
     i = i + 1
 }
 

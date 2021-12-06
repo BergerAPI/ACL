@@ -56,6 +56,9 @@ void Interpreter::interpretChild(AstChild *node) {
     } else if (node->getIdentifier() == "IfStatement") {
         auto realNode = dynamic_cast<IfStatementNode *>(node);
 
+        // new scope
+        this->current_scope = new Scope(this->current_scope);
+
         // We need to check if the condition is true
         if (this->interpretExpression(realNode->condition.get()).intValue == 1) {
             // If it is, we need to interpret the true branch
@@ -68,17 +71,49 @@ void Interpreter::interpretChild(AstChild *node) {
                 this->interpretChild(item.get());
             }
         }
+
+        // back to the parent scope
+        this->current_scope = this->current_scope->parent;
     } else if (node->getIdentifier() == "WhileStatement") {
         auto realNode = dynamic_cast<WhileStatementNode *>(node);
         auto condition = std::move(realNode->condition).get();
 
+        // new scope
+        this->current_scope = new Scope(this->current_scope);
+
         // We need to check if the condition is true
         while (this->interpretExpression(condition).intValue == 1) {
+            auto hasBreak = false;
+
             // If it is, we need to interpret the true branch
             for (auto &item: realNode->body) {
-                this->interpretChild(item.get());
+                for (const auto &n: this->getAllNodesInNode(item.get(), true)) {
+                    if (n->getIdentifier() == "BreakStatement") {
+                        hasBreak = true;
+                        break;
+                    }
+
+                    if (n->getIdentifier() == "ContinueStatement") {
+                        throw std::runtime_error("Continue statement is not supported in while loops");
+                    }
+
+                    if (n->getIdentifier() == "ReturnStatement") {
+                        this->current_scope = this->current_scope->parent;
+                        return;
+                    }
+
+                    if (!hasBreak)
+                        this->interpretChild(n);
+
+                }
             }
+
+            if (hasBreak)
+                break;
         }
+
+        // back to the parent scope
+        this->current_scope = this->current_scope->parent;
     } else if (node->getIdentifier() == "ForStatement") {
         auto realNode = dynamic_cast<ForStatementNode *>(node);
         auto location = this->interpretExpression(realNode->location.get());
@@ -88,10 +123,15 @@ void Interpreter::interpretChild(AstChild *node) {
 
         auto list = location.listValue;
 
+        // new scope
+        this->current_scope = new Scope(this->current_scope);
+
         this->current_scope->variables.emplace_back(realNode->initializer, BasicValue(0));
 
+        auto hasBreak = false;
+
         for (auto &item: list) {
-            for (auto &variable : this->current_scope->variables) {
+            for (auto &variable: this->current_scope->variables) {
                 if (variable.first == realNode->initializer) {
                     variable.second = item;
 
@@ -99,10 +139,25 @@ void Interpreter::interpretChild(AstChild *node) {
                 }
             }
 
+            auto hasContinue = false;
+
             for (auto &scope: realNode->body) {
-                this->interpretChild(scope.get());
+                // We need to go through everything. even if-statements in if-statements
+                for (const auto &n: this->getAllNodesInNode(scope.get(), true)) {
+                    if (n->getIdentifier() == "BreakStatement")
+                        hasBreak = true;
+
+                    if (n->getIdentifier() == "ContinueStatement")
+                        hasContinue = true;
+
+                    if (!hasBreak && !hasContinue)
+                        this->interpretChild(n);
+                }
             }
         }
+
+        // back to the parent scope
+        this->current_scope = this->current_scope->parent;
     }
 }
 
@@ -176,7 +231,7 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
                 for (int i = 0; i < left.listValue.size(); i++) {
                     if (left.type != right.type) return BasicValue(false);
 
-                    switch(left.type) {
+                    switch (left.type) {
                         case BasicValue::Type::INT:
                             if (left.listValue[i].intValue != right.listValue[i].intValue) return BasicValue(false);
                             break;
@@ -184,7 +239,8 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
                             if (left.listValue[i].floatValue != right.listValue[i].floatValue) return BasicValue(false);
                             break;
                         case BasicValue::Type::STRING:
-                            if (left.listValue[i].stringValue != right.listValue[i].stringValue) return BasicValue(false);
+                            if (left.listValue[i].stringValue != right.listValue[i].stringValue)
+                                return BasicValue(false);
                             break;
                         case BasicValue::Type::LIST:
                             throw std::runtime_error("Unimplemented");
@@ -380,7 +436,8 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
                 step = this->interpretExpression(realNode->args[2].get());
             }
 
-            if (start.type != BasicValue::Type::INT || end.type != BasicValue::Type::INT || step.type != BasicValue::Type::INT)
+            if (start.type != BasicValue::Type::INT || end.type != BasicValue::Type::INT ||
+                step.type != BasicValue::Type::INT)
                 throw std::runtime_error("range() can only be used on integers");
 
             std::vector<BasicValue> values;
@@ -396,4 +453,47 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
     }
 
     throw std::runtime_error("Cannot interpret expression: " + node->getIdentifier());
+}
+
+std::vector<AstChild *> Interpreter::getAllNodesInNode(AstChild *node, bool ignoreLoops) {
+    std::vector<AstChild *> nodes;
+
+    nodes.push_back(node);
+
+    if (node->getIdentifier() == "IfStatement") {
+        auto ifNode = dynamic_cast<IfStatementNode *>(node);
+
+        // Checking if the condition is true
+        if (this->interpretExpression(ifNode->condition.get()).intValue == 1) {
+            // The condition is true, so we add the true branch
+            for (auto &item: ifNode->thenBranch)
+                for (const auto &childNode: getAllNodesInNode(item.get(), ignoreLoops))
+                    nodes.push_back(childNode);
+        } else {
+            // The condition is false, so we add the false branch
+            for (auto &item: ifNode->elseBranch)
+                for (const auto &childNode: getAllNodesInNode(item.get(), ignoreLoops))
+                    nodes.push_back(childNode);
+        }
+    }
+
+    if (!ignoreLoops) {
+        if (node->getIdentifier() == "WhileStatement") {
+            auto whileNode = dynamic_cast<WhileStatementNode *>(node);
+
+            while (this->interpretExpression(whileNode->condition.get()).intValue == 1) {
+                for (auto &item: whileNode->body)
+                    for (const auto &childNode: getAllNodesInNode(item.get(), ignoreLoops))
+                        nodes.push_back(childNode);
+            }
+        } else if (node->getIdentifier() == "ForStatement") {
+            auto forNode = dynamic_cast<ForStatementNode *>(node);
+
+            for (auto &item: forNode->body)
+                for (const auto &childNode: getAllNodesInNode(item.get(), ignoreLoops))
+                    nodes.push_back(childNode);
+        }
+    }
+
+    return nodes;
 }

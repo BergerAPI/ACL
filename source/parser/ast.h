@@ -326,6 +326,32 @@ public:
     }
 };
 
+class BreakStatementNode : public AstChild {
+public:
+    ~BreakStatementNode() override = default;
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "BreakStatement";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier();
+    }
+};
+
+class ContinueStatementNode : public AstChild {
+public:
+    ~ContinueStatementNode() override = default;
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "ContinueStatement";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier();
+    }
+};
+
 class AbstractSyntaxTree {
 public:
     virtual ~AbstractSyntaxTree() = default;

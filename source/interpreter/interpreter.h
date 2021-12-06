@@ -55,6 +55,8 @@ public:
 
     void interpretChild(AstChild *node);
 
+    std::vector<AstChild*> getAllNodesInNode(AstChild *node, bool ignoreLoops = false);
+
     BasicValue interpretExpression(AstChild *node);
 };
 

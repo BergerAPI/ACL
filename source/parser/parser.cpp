@@ -297,11 +297,17 @@ std::unique_ptr<AstChild> Parser::parseChild() {
             return this->expression();
 
         case Token::Type::KEYWORD:
-            if (token.raw == "let")return this->variableDefinition();
-            else if (token.raw == "if")return this->ifStatement();
-            else if (token.raw == "while")return this->whileStatement();
+            if (token.raw == "let") return this->variableDefinition();
+            else if (token.raw == "if") return this->ifStatement();
+            else if (token.raw == "while") return this->whileStatement();
             else if (token.raw == "for") return this->forStatement();
-            else throw std::runtime_error("Keyword not implemented: " + token.raw);
+            else if (token.raw == "break") {
+                this->currentTokenIndex++;
+                return std::make_unique<BreakStatementNode>();
+            } else if (token.raw == "continue") {
+                this->currentTokenIndex++;
+                return std::make_unique<ContinueStatementNode>();
+            } else throw std::runtime_error("Keyword not implemented: " + token.raw);
 
         default:
             throw std::runtime_error("Unknown token type: " + std::to_string(static_cast<int>(token.type)));
