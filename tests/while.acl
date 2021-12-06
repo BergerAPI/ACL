@@ -4,7 +4,7 @@ let i = 0
 let startTime = time()
 
 while i < 1000000 {
-    print(i)
+    # print(i)
     i = i + 1
 }
 

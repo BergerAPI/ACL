@@ -69,7 +69,6 @@ void Interpreter::interpretChild(AstChild *node) {
             }
         }
     } else if (node->getIdentifier() == "WhileStatement") {
-        // We need to node without deleting the original node
         auto realNode = dynamic_cast<WhileStatementNode *>(node);
         auto condition = std::move(realNode->condition).get();
 
@@ -78,6 +77,30 @@ void Interpreter::interpretChild(AstChild *node) {
             // If it is, we need to interpret the true branch
             for (auto &item: realNode->body) {
                 this->interpretChild(item.get());
+            }
+        }
+    } else if (node->getIdentifier() == "ForStatement") {
+        auto realNode = dynamic_cast<ForStatementNode *>(node);
+        auto location = this->interpretExpression(realNode->location.get());
+
+        if (location.type != BasicValue::Type::LIST)
+            throw std::runtime_error("For loop location is not a list");
+
+        auto list = location.listValue;
+
+        this->current_scope->variables.emplace_back(realNode->initializer, BasicValue(0));
+
+        for (auto &item: list) {
+            for (auto &variable : this->current_scope->variables) {
+                if (variable.first == realNode->initializer) {
+                    variable.second = item;
+
+                    break;
+                }
+            }
+
+            for (auto &scope: realNode->body) {
+                this->interpretChild(scope.get());
             }
         }
     }
@@ -145,6 +168,33 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             else if (op == "==") return BasicValue(std::to_string(left.floatValue) == right.stringValue);
             else if (op == "!=") return BasicValue(std::to_string(left.floatValue) != right.stringValue);
             else throw std::runtime_error("Cannot divide, multiply two strings");
+        } else if (left.type == BasicValue::Type::LIST && right.type == BasicValue::Type::LIST) {
+            if (op == "==") {
+                // Comparing all elements
+                if (left.listValue.size() != right.listValue.size()) return BasicValue(false);
+
+                for (int i = 0; i < left.listValue.size(); i++) {
+                    if (left.type != right.type) return BasicValue(false);
+
+                    switch(left.type) {
+                        case BasicValue::Type::INT:
+                            if (left.listValue[i].intValue != right.listValue[i].intValue) return BasicValue(false);
+                            break;
+                        case BasicValue::Type::FLOAT:
+                            if (left.listValue[i].floatValue != right.listValue[i].floatValue) return BasicValue(false);
+                            break;
+                        case BasicValue::Type::STRING:
+                            if (left.listValue[i].stringValue != right.listValue[i].stringValue) return BasicValue(false);
+                            break;
+                        case BasicValue::Type::LIST:
+                            throw std::runtime_error("Unimplemented");
+                        case BasicValue::VOID:
+                            return BasicValue(false);
+                    }
+                }
+
+                return BasicValue(true);
+            } else throw std::runtime_error("Unknown operator " + op);
         }
 
         throw std::runtime_error("Cannot perform math operation on non-integer values");
@@ -292,11 +342,54 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
                 throw std::runtime_error("time() takes no arguments");
 
             // We need the time in seconds
-            auto string = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::system_clock::now().time_since_epoch()).count() / 1000.0);
+            auto string = std::to_string(std::chrono::duration_cast<std::chrono::seconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count());
 
             // converting to float
             return BasicValue(std::stoi(string));
+        } else if (realNode->name == "list") {
+            if (realNode->args.empty())
+                throw std::runtime_error("list() takes at least one arguments");
+
+            std::vector<BasicValue> values;
+
+            for (auto &arg: realNode->args) {
+                values.push_back(this->interpretExpression(arg.get()));
+            }
+
+            return BasicValue(values);
+        } else if (realNode->name == "range") {
+            auto start = BasicValue(0);
+            auto end = BasicValue(0);
+            auto step = BasicValue(1);
+
+            if (realNode->args.empty() || realNode->args.size() > 3)
+                throw std::runtime_error("range() takes 1, 2 or 3 arguments");
+
+            if (realNode->args.size() == 1)
+                end = this->interpretExpression(realNode->args[0].get());
+
+            if (realNode->args.size() == 2) {
+                start = this->interpretExpression(realNode->args[0].get());
+                end = this->interpretExpression(realNode->args[1].get());
+            }
+
+            if (realNode->args.size() == 3) {
+                start = this->interpretExpression(realNode->args[0].get());
+                end = this->interpretExpression(realNode->args[1].get());
+                step = this->interpretExpression(realNode->args[2].get());
+            }
+
+            if (start.type != BasicValue::Type::INT || end.type != BasicValue::Type::INT || step.type != BasicValue::Type::INT)
+                throw std::runtime_error("range() can only be used on integers");
+
+            std::vector<BasicValue> values;
+
+            for (int i = start.intValue; i < end.intValue; i += step.intValue) {
+                values.emplace_back(i);
+            }
+
+            return BasicValue(values);
         }
 
         throw std::runtime_error("Function " + realNode->name + " is not defined");

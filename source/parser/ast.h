@@ -293,6 +293,39 @@ public:
     }
 };
 
+class ForStatementNode : public AstChild {
+public:
+    ~ForStatementNode() override = default;
+
+    std::string initializer;
+    std::unique_ptr<AstChild> location;
+    std::vector<std::unique_ptr<AstChild>> body;
+
+    ForStatementNode(std::string initializer, std::unique_ptr<AstChild> location,
+                     std::vector<std::unique_ptr<AstChild>> body) {
+        this->initializer = std::move(initializer);
+        this->location = std::move(location);
+        this->body = std::move(body);
+    }
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "ForStatement";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(";
+        std::cout << initializer;
+        std::cout << " ";
+        location->print();
+        std::cout << " ";
+        for (auto &statement: body) {
+            statement->print();
+            std::cout << " ";
+        }
+        std::cout << ")";
+    }
+};
+
 class AbstractSyntaxTree {
 public:
     virtual ~AbstractSyntaxTree() = default;

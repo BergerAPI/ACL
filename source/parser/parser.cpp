@@ -18,6 +18,35 @@
 #include <memory>
 
 
+std::unique_ptr<AstChild> Parser::forStatement() {
+    this->currentTokenIndex++;
+
+    auto initializer = this->tokens[this->currentTokenIndex].raw;
+
+    this->expect(Token::Type::IDENTIFIER);
+
+    if (this->tokens[this->currentTokenIndex].raw != "in") {
+        throw std::runtime_error("Expected 'in' after for loop initializer.");
+    }
+
+    this->currentTokenIndex++;
+
+    auto iterator = this->identifier();
+
+    std::vector<std::unique_ptr<AstChild>> thenStatements;
+
+    this->expect(Token::Type::LEFT_BRACE);
+
+    while (this->currentTokenIndex < this->tokens.size() &&
+           this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_BRACE) {
+        thenStatements.emplace_back(this->parseChild());
+    }
+
+    this->expect(Token::Type::RIGHT_BRACE);
+
+    return std::make_unique<ForStatementNode>(std::move(initializer), std::move(iterator), std::move(thenStatements));
+}
+
 std::unique_ptr<AstChild> Parser::whileStatement() {
     this->currentTokenIndex++;
 
@@ -188,7 +217,7 @@ std::unique_ptr<AstChild> Parser::expression() {
             this->tokens[this->currentTokenIndex].raw == "==" || this->tokens[this->currentTokenIndex].raw == "!=" ||
             this->tokens[this->currentTokenIndex].raw == ">" || this->tokens[this->currentTokenIndex].raw == "<" ||
             this->tokens[this->currentTokenIndex].raw == ">=" || this->tokens[this->currentTokenIndex].raw == "<=") ||
-            this->tokens[this->currentTokenIndex].raw == "%") {
+           this->tokens[this->currentTokenIndex].raw == "%") {
         auto currentToken = this->tokens[this->currentTokenIndex];
 
         this->expect(Token::Type::OPERATOR);
@@ -268,17 +297,11 @@ std::unique_ptr<AstChild> Parser::parseChild() {
             return this->expression();
 
         case Token::Type::KEYWORD:
-            if (token.raw == "let") {
-                // Variable definition
-                return this->variableDefinition();
-            } else if (token.raw == "if") {
-                // If statement
-                return this->ifStatement();
-            } else if (token.raw == "while") {
-                return this->whileStatement();
-            } else {
-                throw std::runtime_error("Keyword not implemented: " + token.raw);
-            }
+            if (token.raw == "let")return this->variableDefinition();
+            else if (token.raw == "if")return this->ifStatement();
+            else if (token.raw == "while")return this->whileStatement();
+            else if (token.raw == "for") return this->forStatement();
+            else throw std::runtime_error("Keyword not implemented: " + token.raw);
 
         default:
             throw std::runtime_error("Unknown token type: " + std::to_string(static_cast<int>(token.type)));

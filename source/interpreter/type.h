@@ -26,6 +26,7 @@ public:
         INT,
         FLOAT,
         STRING,
+        LIST,
         VOID,
     };
 
@@ -34,6 +35,7 @@ public:
     int intValue{};
     float floatValue{};
     std::string stringValue;
+    std::vector<BasicValue> listValue;
 
     explicit BasicValue(int value) : type(INT), intValue(value) {}
 
@@ -41,7 +43,9 @@ public:
 
     explicit BasicValue(std::string value) : type(STRING), stringValue(std::move(value)) {}
 
-    explicit BasicValue() : type(STRING), stringValue("void"), intValue(0) {}
+    explicit BasicValue() : type(VOID), stringValue("void"), intValue(0) {}
+
+    explicit BasicValue(std::vector<BasicValue> value) : type(LIST), listValue(std::move(value)) {}
 
     friend std::ostream &operator<<(std::ostream &os, const BasicValue &value) {
         switch (value.type) {
@@ -54,6 +58,13 @@ public:
             case VOID:
             case STRING:
                 os << value.stringValue;
+                break;
+            case LIST:
+                os << "[";
+                for (auto &v: value.listValue) {
+                    os << v << ", ";
+                }
+                os << "]";
                 break;
         }
         return os;

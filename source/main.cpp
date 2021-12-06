@@ -15,7 +15,6 @@
  */
 
 #include <iostream>
-#include <fstream>
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 #include "interpreter/interpreter.h"

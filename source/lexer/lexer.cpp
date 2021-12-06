@@ -70,7 +70,7 @@ std::vector<Token> Lexer::tokenize(std::istream &input) {
 
 
             // If the char is an identifier
-            if (isalpha(c)) {
+            if (isalpha(c) || c == '_') {
                 std::string identifier;
 
                 while (i < line.size() && isalpha(line[i])) {
@@ -82,7 +82,8 @@ std::vector<Token> Lexer::tokenize(std::istream &input) {
 
                 // Checking for keywords
                 if (identifier == "if" || identifier == "else" || identifier == "while" ||
-                    identifier == "function" || identifier == "return" || identifier == "let")
+                    identifier == "function" || identifier == "return" || identifier == "let" || identifier == "for" ||
+                    identifier == "in")
                     tokens.emplace_back(Token::Type::KEYWORD, identifier, line_index);
                 else tokens.emplace_back(Token::Type::IDENTIFIER, identifier, line_index);
 
