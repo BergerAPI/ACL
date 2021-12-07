@@ -17,6 +17,21 @@
 #include "parser.h"
 #include <memory>
 
+std::unique_ptr<AstChild> Parser::returnStatement() {
+    this->currentTokenIndex++;
+
+    auto currentToken = this->tokens[this->currentTokenIndex];
+
+    if (currentToken.type == Token::Type::INT || currentToken.type == Token::Type::FLOAT ||
+        currentToken.type == Token::Type::STRING || currentToken.type == Token::Type::IDENTIFIER || currentToken.type == Token::Type::LEFT_PAREN) {
+        this->currentTokenIndex++;
+        return std::make_unique<ReturnStatementNode>(this->parseChild());
+    }
+
+    return std::make_unique<ReturnStatementNode>();
+}
+
+
 std::unique_ptr<AstChild> Parser::functionDefinition() {
     this->currentTokenIndex++;
 
@@ -29,7 +44,8 @@ std::unique_ptr<AstChild> Parser::functionDefinition() {
     std::vector<std::string> parameters;
     std::vector<std::unique_ptr<AstChild>> body;
 
-    while (this->currentTokenIndex < this->tokens.size() && this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_PAREN) {
+    while (this->currentTokenIndex < this->tokens.size() &&
+           this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_PAREN) {
         auto currentToken = this->tokens[this->currentTokenIndex];
 
         if (currentToken.type != Token::Type::IDENTIFIER) {
@@ -338,6 +354,7 @@ std::unique_ptr<AstChild> Parser::parseChild() {
             else if (token.raw == "while") return this->whileStatement();
             else if (token.raw == "for") return this->forStatement();
             else if (token.raw == "func") return this->functionDefinition();
+            else if (token.raw == "return") return this->returnStatement();
             else if (token.raw == "break") {
                 this->currentTokenIndex++;
                 return std::make_unique<BreakStatementNode>();
@@ -347,6 +364,7 @@ std::unique_ptr<AstChild> Parser::parseChild() {
             } else throw std::runtime_error("Keyword not implemented: " + token.raw);
 
         default:
-            throw std::runtime_error("Unknown token type: " + std::to_string(static_cast<int>(token.type)));
+            throw std::runtime_error("Unknown token type: " + std::to_string(static_cast<int>(token.type)) + " on line: " +
+                                     std::to_string(token.line));
     }
 }

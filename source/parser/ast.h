@@ -385,6 +385,34 @@ public:
     }
 };
 
+class ReturnStatementNode : public AstChild {
+public:
+    ~ReturnStatementNode() override = default;
+
+    std::unique_ptr<AstChild> value;
+
+    // Constructor requires a value
+    ReturnStatementNode(std::unique_ptr<AstChild> value) {
+        this->value = std::move(value);
+    }
+
+    ReturnStatementNode() {
+        this->value = nullptr;
+    }
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "ReturnStatement";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(";
+        if (value != nullptr) {
+            value->print();
+        }
+        std::cout << ")";
+    }
+};
+
 class AbstractSyntaxTree {
 public:
     virtual ~AbstractSyntaxTree() = default;

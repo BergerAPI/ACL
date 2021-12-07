@@ -24,13 +24,16 @@
 #include <fstream>
 #include <utility>
 
+class Scope;
+
 class InterpreterFunction {
 public:
     std::string name;
     std::vector<std::string> *parameters;
     std::vector<std::unique_ptr<AstChild>> *body;
+    Scope *scope;
 
-    explicit InterpreterFunction(std::string name, std::vector<std::string> *parameters, std::vector<std::unique_ptr<AstChild>> *body) : name(std::move(name)), parameters(std::move(parameters)), body(std::move(body)) {}
+    explicit InterpreterFunction(std::string name, std::vector<std::string> *parameters, std::vector<std::unique_ptr<AstChild>> *body, Scope* scope) : name(std::move(name)), parameters(parameters), body(body), scope(scope) {}
 };
 
 class Scope {

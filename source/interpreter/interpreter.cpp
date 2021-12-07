@@ -167,7 +167,8 @@ void Interpreter::interpretChild(AstChild *node) {
         }
 
         // Adding to the current scope
-        this->current_scope->functions.emplace_back(realNode->name, &realNode->parameters, &realNode->body);
+        this->current_scope->functions.emplace_back(realNode->name, &realNode->parameters, &realNode->body,
+                                                    this->current_scope);
     }
 }
 
@@ -467,8 +468,11 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
                     if (item.parameters->size() != realNode->args.size())
                         throw std::runtime_error("Wrong number of arguments");
 
+                    // Saving the current scope
+                    auto old_scope = this->current_scope;
+
                     // new scope
-                    this->current_scope = new Scope(this->current_scope);
+                    this->current_scope = new Scope(item.scope);
 
                     // We need to add the parameters to the scope
                     auto index = 0;
@@ -481,11 +485,30 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
                     }
 
                     // Interpreting
-                    for (const auto &bodyNode: *item.body)
-                        this->interpretChild(bodyNode.get());
+                    for (const auto &bodyNode: *item.body) {
+                        for (auto &nItem: this->getAllNodesInNode(bodyNode.get())) {
+                            if (nItem->getIdentifier() == "ReturnStatement") {
+                                auto returnNode = dynamic_cast<ReturnStatementNode *>(nItem);
+
+                                if (returnNode->value != nullptr) {
+                                    auto value = this->interpretExpression(returnNode->value.get());
+
+                                    // Returning the value
+                                    this->current_scope = old_scope;
+                                    return value;
+                                }
+
+                                // Returning the value
+                                this->current_scope = old_scope;
+                                return BasicValue();
+                            }
+
+                            this->interpretChild(nItem);
+                        }
+                    }
 
                     // back to the parent scope
-                    this->current_scope = this->current_scope->parent;
+                    this->current_scope = old_scope;
 
                     return BasicValue();
                 }

@@ -3,3 +3,13 @@ func test(param1) {
 }
 
 test("Tturna")
+
+func rec_test(n) {
+    if n == 0 || n == 1 {
+        return n
+    }
+
+    return rec_test(n - 1) + rec_test(n - 2)
+}
+
+print(rec_test(10))
