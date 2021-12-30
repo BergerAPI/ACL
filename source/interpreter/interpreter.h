@@ -23,6 +23,7 @@
 #include "type.h"
 #include <fstream>
 #include <utility>
+#include "../main.h"
 
 class Scope;
 

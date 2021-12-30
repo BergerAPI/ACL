@@ -32,6 +32,30 @@ void Interpreter::interpretChild(AstChild *node) {
         // We need to calculate the value of the expression
         // and store it in the value field of the node
         this->interpretExpression(node);
+    } else if (node->getIdentifier() == "ImportStatement") {
+        auto realNode = dynamic_cast<ImportStatementNode *>(node);
+
+        // Checking if we are in the root scope
+        if (this->current_scope->parent != nullptr)  {
+            throw std::runtime_error("Import statement is not allowed in inner scopes");
+        }
+
+        // Getting the parsed pAbstractSyntaxTree
+        auto pAbstractSyntaxTree = parse_file(realNode->path);
+
+        // Adding all functions and variables to the current scope
+        for (auto &item: pAbstractSyntaxTree->children) {
+            if (item->getIdentifier() == "FunctionDefinition") {
+                auto realItem = dynamic_cast<FunctionDefinitionNode *>(item);
+
+                this->current_scope->functions.emplace_back(realItem->name, &realItem->parameters, &realItem->body,
+                                                            this->current_scope);
+            } else if (item->getIdentifier() == "VariableDefinition") {
+                auto realItem = dynamic_cast<VariableDefinitionNode *>(item);
+
+                this->current_scope->variables.emplace_back(realItem->name, this->interpretExpression(realItem->value.get()));
+            }
+        }
     } else if (node->getIdentifier() == "VariableDefinition") {
         auto realNode = dynamic_cast<VariableDefinitionNode *>(node);
 

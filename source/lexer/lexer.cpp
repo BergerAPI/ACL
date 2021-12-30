@@ -83,7 +83,7 @@ std::vector<Token> Lexer::tokenize(std::istream &input) {
                 // Checking for keywords
                 if (identifier == "if" || identifier == "else" || identifier == "while" ||
                     identifier == "func" || identifier == "return" || identifier == "let" || identifier == "for" ||
-                    identifier == "in" || identifier == "break" || identifier == "continue")
+                    identifier == "in" || identifier == "break" || identifier == "continue" || identifier == "import")
                     tokens.emplace_back(Token::Type::KEYWORD, identifier, line_index);
                 else tokens.emplace_back(Token::Type::IDENTIFIER, identifier, line_index);
 

@@ -17,9 +17,9 @@
 #ifndef ACL_AST_H
 #define ACL_AST_H
 
-#include <iostream>
-#include <utility>
-#include <vector>
+#include "iostream"
+#include "vector"
+#include "utility"
 
 class AstChild {
 public:
@@ -361,7 +361,8 @@ public:
     std::vector<std::unique_ptr<AstChild>> body;
 
     // Constructor requires a name, args and body
-    FunctionDefinitionNode(std::string name, std::vector<std::string> parameters, std::vector<std::unique_ptr<AstChild>> body) {
+    FunctionDefinitionNode(std::string name, std::vector<std::string> parameters,
+                           std::vector<std::unique_ptr<AstChild>> body) {
         this->name = std::move(name);
         this->parameters = std::move(parameters);
         this->body = std::move(body);
@@ -410,6 +411,25 @@ public:
             value->print();
         }
         std::cout << ")";
+    }
+};
+
+class ImportStatementNode : public AstChild {
+public:
+    ~ImportStatementNode() override = default;
+
+    std::string path;
+
+    explicit ImportStatementNode(std::string name) {
+        this->path = std::move(name);
+    }
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "ImportStatement";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(" << path << ")";
     }
 };
 

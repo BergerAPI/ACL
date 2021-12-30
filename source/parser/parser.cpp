@@ -17,6 +17,16 @@
 #include "parser.h"
 #include <memory>
 
+std::unique_ptr<AstChild> Parser::importStatement() {
+    this->currentTokenIndex++;
+
+    auto importPath = this->tokens[this->currentTokenIndex].raw;
+
+    this->expect(Token::Type::STRING);
+
+    return std::make_unique<ImportStatementNode>(importPath);
+}
+
 std::unique_ptr<AstChild> Parser::returnStatement() {
     this->currentTokenIndex++;
 
@@ -358,6 +368,7 @@ std::unique_ptr<AstChild> Parser::parseChild() {
             else if (token.raw == "for") return this->forStatement();
             else if (token.raw == "func") return this->functionDefinition();
             else if (token.raw == "return") return this->returnStatement();
+            else if (token.raw == "import") return this->importStatement();
             else if (token.raw == "break") {
                 this->currentTokenIndex++;
                 return std::make_unique<BreakStatementNode>();

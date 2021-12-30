@@ -14,30 +14,47 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
-#include "lexer/lexer.h"
-#include "parser/parser.h"
-#include "interpreter/interpreter.h"
+#include "main.h"
 
-static constexpr const char *k_file_extension = ".acl";
+// A list of all parsed files.
+std::vector<std::pair<std::string, AbstractSyntaxTree *>> parsed_files;
 
-int main(int argv, char** args) {
+// The default path to the source directory.
+std::string source_path;
+
+int main(int argv, char **args) {
     if (argv < 2) {
         std::cout << "Usage: " << args[0] << " <file>" << std::endl;
         return 1;
     }
 
-    std::string file_name = args[1];
+    // The source path is the path of the first argument, without the file.
+    const size_t last_slash_idx = std::string(args[1]).rfind('/');
 
-    if (file_name.find(k_file_extension) == std::string::npos) {
-        file_name += k_file_extension;
+    if (std::string::npos != last_slash_idx) {
+        source_path = std::string(args[1]).substr(0, last_slash_idx);
     }
 
-    std::ifstream file(file_name);
+    Interpreter interpreter(parse_file(args[1], true));
+
+    // Interpret the AST
+    interpreter.interpret();
+
+    return 0;
+}
+
+AbstractSyntaxTree *parse_file(const std::string &file_name, bool is_main_file) {
+    // Checking if we already have the file parsed in out files vector
+    for (auto &file: parsed_files) {
+        if (file.first == file_name) {
+            return file.second;
+        }
+    }
+
+    std::ifstream file((is_main_file ? "" : source_path + "/") + file_name);
 
     if (!file.is_open()) {
-        std::cout << "File not found: " << file_name << std::endl;
-        return 1;
+        throw std::runtime_error("File not found: " + (is_main_file ? "" : source_path + "/") + file_name);
     }
 
     std::vector<Token> tokens = Lexer::tokenize(file);
@@ -48,10 +65,7 @@ int main(int argv, char** args) {
     // Parse the tokens
     auto ast = parser.parse();
 
-    Interpreter interpreter(ast);
+    parsed_files.emplace_back(file_name, ast);
 
-    // Interpret the AST
-    interpreter.interpret();
-
-    return 0;
+    return ast;
 }
