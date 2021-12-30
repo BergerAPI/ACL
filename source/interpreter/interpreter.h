@@ -24,6 +24,8 @@
 #include <fstream>
 #include <utility>
 #include "../main.h"
+#include <memory>
+#include <chrono>
 
 class Scope;
 
