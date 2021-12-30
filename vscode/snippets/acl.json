@@ -1,0 +1,32 @@
+{
+  "If Statement": {
+    "scope": "acl",
+    "prefix": "if",
+    "body": ["if ${1:condition} {", "\t$0", "}"],
+    "description": "If statement"
+  },
+  "Else If Statement": {
+    "scope": "acl",
+    "prefix": "else if",
+    "body": ["else if ${1:condition} {", "\t$0", "}"],
+    "description": "Else if statement"
+  },
+  "Else Statement": {
+    "scope": "acl",
+    "prefix": "else",
+    "body": ["else {", "\t$0", "}"],
+    "description": "Else statement"
+  },
+  "For Statement": {
+    "scope": "acl",
+    "prefix": "for",
+    "body": ["for i in range(${1:range}) {", "\t$0", "}"],
+    "description": "For statement"
+  },
+  "While Statement": {
+    "scope": "acl",
+    "prefix": "while",
+    "body": ["while ${1:condition} {", "\t$0", "}"],
+    "description": "While statement"
+  }
+}
