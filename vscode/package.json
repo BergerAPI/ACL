@@ -1,0 +1,25 @@
+{
+    "name": "acl-programming-language",
+    "displayName": "ACL Programming Language",
+    "description": "A general purpose programming language",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.63.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "acl",
+            "aliases": ["ACL", "acl"],
+            "extensions": [".acl"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "acl",
+            "scopeName": "source.acl",
+            "path": "./syntaxes/acl.tmLanguage.json"
+        }]
+    }
+}
