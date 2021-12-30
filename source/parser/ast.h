@@ -392,7 +392,7 @@ public:
     std::unique_ptr<AstChild> value;
 
     // Constructor requires a value
-    ReturnStatementNode(std::unique_ptr<AstChild> value) {
+    explicit ReturnStatementNode(std::unique_ptr<AstChild> value) {
         this->value = std::move(value);
     }
 

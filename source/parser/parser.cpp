@@ -23,9 +23,9 @@ std::unique_ptr<AstChild> Parser::returnStatement() {
     auto currentToken = this->tokens[this->currentTokenIndex];
 
     if (currentToken.type == Token::Type::INT || currentToken.type == Token::Type::FLOAT ||
-        currentToken.type == Token::Type::STRING || currentToken.type == Token::Type::IDENTIFIER || currentToken.type == Token::Type::LEFT_PAREN) {
-        this->currentTokenIndex++;
-        return std::make_unique<ReturnStatementNode>(this->parseChild());
+        currentToken.type == Token::Type::STRING || currentToken.type == Token::Type::IDENTIFIER ||
+        currentToken.type == Token::Type::LEFT_PAREN) {
+        return std::make_unique<ReturnStatementNode>(this->expression());
     }
 
     return std::make_unique<ReturnStatementNode>();
@@ -235,7 +235,8 @@ std::unique_ptr<AstChild> Parser::factor() {
                 return std::make_unique<UnaryExpressionNode>(std::move(expr), currentToken.raw);
             } else {
                 throw std::runtime_error(
-                        "Unexpected token: " + currentToken.raw + ", " + std::to_string(currentToken.type));
+                        "Unexpected token: " + currentToken.raw + ", " + std::to_string(currentToken.type) +
+                        ", line: " + std::to_string(currentToken.line));
             }
         }
 
@@ -328,7 +329,9 @@ void Parser::expect(Token::Type type) {
     Token currentToken = this->getCurrentToken();
 
     if (currentToken.type != type)
-        throw std::runtime_error("Unexpected token: " + currentToken.raw + ". We expected: " + std::to_string(type));
+        throw std::runtime_error(
+                "Unexpected token: " + currentToken.raw + ". We expected: " + std::to_string(type) + ", line: " +
+                std::to_string(currentToken.line));
 }
 
 Parser::Parser(std::vector<Token> tokens) {
@@ -364,7 +367,8 @@ std::unique_ptr<AstChild> Parser::parseChild() {
             } else throw std::runtime_error("Keyword not implemented: " + token.raw);
 
         default:
-            throw std::runtime_error("Unknown token type: " + std::to_string(static_cast<int>(token.type)) + " on line: " +
-                                     std::to_string(token.line));
+            throw std::runtime_error(
+                    "Unknown token type: " + std::to_string(static_cast<int>(token.type)) + " on line: " +
+                    std::to_string(token.line));
     }
 }

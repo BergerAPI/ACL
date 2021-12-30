@@ -1,15 +1,9 @@
-func test(param1) {
-    print("Naruto: " + param1)
-}
-
-test("Tturna")
-
-func rec_test(n) {
-    if n == 0 || n == 1 {
-        return n
+func factorial(num) {
+    if num == 0 {
+        return 1
+    } else {
+        return num * factorial(num - 1)
     }
-
-    return rec_test(n - 1) + rec_test(n - 2)
 }
 
-print(rec_test(10))
+print(factorial(10))

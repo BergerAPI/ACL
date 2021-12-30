@@ -472,17 +472,19 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
                     auto old_scope = this->current_scope;
 
                     // new scope
-                    this->current_scope = new Scope(item.scope);
+                    auto new_scope = new Scope(item.scope);
 
                     // We need to add the parameters to the scope
                     auto index = 0;
 
                     for (auto &parameter: *item.parameters) {
-                        this->current_scope->variables.emplace_back(parameter,
+                        new_scope->variables.emplace_back(parameter,
                                                                     this->interpretExpression(
                                                                             realNode->args[index].get()));
                         index++;
                     }
+
+                    this->current_scope = new_scope;
 
                     // Interpreting
                     for (const auto &bodyNode: *item.body) {
@@ -514,7 +516,6 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
                 }
             }
         }
-
 
         throw std::runtime_error("Function " + realNode->name + " is not defined");
     }
