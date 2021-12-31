@@ -36,7 +36,7 @@ class Parser {
     /**
      * Statements
      */
-    std::unique_ptr<AstChild> variableDefinition();
+    std::unique_ptr<AstChild> variableDefinition(bool constant);
     std::unique_ptr<AstChild> ifStatement();
     std::unique_ptr<AstChild> whileStatement();
     std::unique_ptr<AstChild> forStatement();

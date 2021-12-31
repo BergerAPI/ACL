@@ -40,12 +40,21 @@ public:
     explicit InterpreterFunction(std::string name, std::vector<std::string> *parameters, std::vector<std::unique_ptr<AstChild>> *body, Scope* scope) : name(std::move(name)), parameters(parameters), body(body), scope(scope) {}
 };
 
+class InterpretedVariable {
+public:
+    std::string name;
+    BasicValue value;
+    bool constant;
+
+    explicit InterpretedVariable(std::string name, BasicValue value, bool constant) : name(std::move(name)), value(value), constant(constant) {}
+};
+
 class Scope {
 public:
     explicit Scope(Scope *parent = nullptr) : parent(parent) {}
 
     // Variables in vector
-    std::vector<std::pair<std::string, BasicValue>> variables;
+    std::vector<InterpretedVariable> variables;
 
     // Functions in map (function name, function)
     std::vector<InterpreterFunction> functions;

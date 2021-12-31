@@ -45,7 +45,7 @@ void Interpreter::importFile(AstChild *node) {
             auto realItem = dynamic_cast<VariableDefinitionNode *>(item);
 
             this->current_scope->variables.emplace_back(realItem->name,
-                                                        this->interpretExpression(realItem->value.get()));
+                                                        this->interpretExpression(realItem->value.get()), realItem->constant);
         } else if (item->getIdentifier() == "ImportStatement") {
             this->importFile(item);
         }
@@ -67,7 +67,7 @@ void Interpreter::interpretChild(AstChild *node) {
         auto realNode = dynamic_cast<VariableDefinitionNode *>(node);
 
         this->current_scope->variables.emplace_back(realNode->name,
-                                                    this->interpretExpression(realNode->value.get()));
+                                                    this->interpretExpression(realNode->value.get()), realNode->constant);
     } else if (node->getIdentifier() == "VariableAssignment") {
         auto realNode = dynamic_cast<VariableAssignmentNode *>(node);
 
@@ -75,8 +75,11 @@ void Interpreter::interpretChild(AstChild *node) {
         // Checking if the variable is defined in any scope above the current one
         for (auto scope = this->current_scope; scope != nullptr; scope = scope->parent) {
             for (auto &variable: scope->variables) {
-                if (variable.first == realNode->name) {
-                    variable.second = this->interpretExpression(realNode->value.get());
+                if (variable.name == realNode->name) {
+                    if (variable.constant)
+                        throw std::runtime_error("Cannot assign to constant variable");
+
+                    variable.value = this->interpretExpression(realNode->value.get());
                     return;
                 }
             }
@@ -159,14 +162,14 @@ void Interpreter::interpretChild(AstChild *node) {
         // new scope
         this->current_scope = new Scope(this->current_scope);
 
-        this->current_scope->variables.emplace_back(realNode->initializer, BasicValue(0));
+        this->current_scope->variables.emplace_back(realNode->initializer, BasicValue(0), false);
 
         auto hasBreak = false;
 
         for (auto &item: list) {
             for (auto &variable: this->current_scope->variables) {
-                if (variable.first == realNode->initializer) {
-                    variable.second = item;
+                if (variable.name == realNode->initializer) {
+                    variable.value = item;
 
                     break;
                 }
@@ -320,8 +323,8 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
         // Checking if the variable is defined in any scope above the current one
         for (auto scope = this->current_scope; scope != nullptr; scope = scope->parent) {
             for (auto &variable: scope->variables) {
-                if (variable.first == realNode->name) {
-                    return variable.second;
+                if (variable.name == realNode->name) {
+                    return variable.value;
                 }
             }
         }
@@ -525,7 +528,7 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
                     for (auto &parameter: *item.parameters) {
                         new_scope->variables.emplace_back(parameter,
                                                           this->interpretExpression(
-                                                                  realNode->args[index].get()));
+                                                                  realNode->args[index].get()), false);
                         index++;
                     }
 

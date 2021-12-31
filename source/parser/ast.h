@@ -147,11 +147,13 @@ public:
 
     std::string name;
     std::unique_ptr<AstChild> value;
+    bool constant;
 
     // Constructor requires a name and a value
-    VariableDefinitionNode(std::string name, std::unique_ptr<AstChild> value) {
+    VariableDefinitionNode(std::string name, std::unique_ptr<AstChild> value, bool constant) {
         this->name = std::move(name);
         this->value = std::move(value);
+        this->constant = constant;
     }
 
     [[nodiscard]] std::string getIdentifier() override {

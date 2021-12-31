@@ -85,7 +85,7 @@ std::vector<Token> Lexer::tokenize(std::istream &input) {
                     tokens.emplace_back(Token::Type::OPERATOR, identifier == "or" ? "||" : "&&", line_index);
                 else if (identifier == "if" || identifier == "else" || identifier == "while" ||
                     identifier == "func" || identifier == "return" || identifier == "let" || identifier == "for" ||
-                    identifier == "in" || identifier == "break" || identifier == "continue" || identifier == "import")
+                    identifier == "in" || identifier == "break" || identifier == "continue" || identifier == "import" || identifier == "const")
                     tokens.emplace_back(Token::Type::KEYWORD, identifier, line_index);
                 else tokens.emplace_back(Token::Type::IDENTIFIER, identifier, line_index);
 

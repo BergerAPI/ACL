@@ -1,13 +1,13 @@
-let true = 1
-let false = 0
+const true = 1
+const false = 0
 
 # MacOS
-let OS_X_STDIN_FILENO = 0
-let OS_X_STDOUT_FILENO = 1
+const OS_X_STDIN_FILENO = 0
+const OS_X_STDOUT_FILENO = 1
 
 # Linux
-let LINUX_SYS_WRITE = 4
-let LINUX_SYS_READ = 3
+const LINUX_SYS_WRITE = 4
+const LINUX_SYS_READ = 3
 
 # Printing to the console via stdout.
 # This function uses heavily low level syscalls to write to the console,

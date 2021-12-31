@@ -211,7 +211,7 @@ std::unique_ptr<AstChild> Parser::identifier() {
     return res;
 }
 
-std::unique_ptr<AstChild> Parser::variableDefinition() {
+std::unique_ptr<AstChild> Parser::variableDefinition(bool constant) {
     this->currentTokenIndex++;
 
     auto variableName = this->tokens[this->currentTokenIndex].raw;
@@ -219,7 +219,7 @@ std::unique_ptr<AstChild> Parser::variableDefinition() {
     this->expect(Token::Type::IDENTIFIER);
     this->expect(Token::Type::EQUALS);
 
-    auto node = std::make_unique<VariableDefinitionNode>(variableName, std::move(this->expression()));
+    auto node = std::make_unique<VariableDefinitionNode>(variableName, std::move(this->expression()), constant);
     node->line = this->tokens[this->currentTokenIndex].line;
     return node;
 }
@@ -380,7 +380,7 @@ std::unique_ptr<AstChild> Parser::parseChild() {
         case Token::Type::KEYWORD: {
             auto result = std::unique_ptr<AstChild>();
 
-            if (token.raw == "let") result = this->variableDefinition();
+            if (token.raw == "let" || token.raw == "const") result = this->variableDefinition(token.raw == "const");
             else if (token.raw == "if") result = this->ifStatement();
             else if (token.raw == "while") result = this->whileStatement();
             else if (token.raw == "for") result = this->forStatement();
