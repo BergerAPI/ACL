@@ -35,7 +35,8 @@ int main(int argv, char **args) {
         source_path = std::string(args[1]).substr(0, last_slash_idx);
     }
 
-    Interpreter interpreter(parse_file(args[1], true));
+    auto code = parse_file(args[1], true);
+    Interpreter interpreter(code);
 
     // Interpret the AST
     interpreter.interpret();

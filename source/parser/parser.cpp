@@ -278,27 +278,25 @@ std::unique_ptr<AstChild> Parser::expression() {
         return left;
     }
 
-    while (this->tokens[this->currentTokenIndex].raw == "+" || this->tokens[this->currentTokenIndex].raw == "-" ||
-           this->tokens[this->currentTokenIndex].raw == "==" || this->tokens[this->currentTokenIndex].raw == "!=" ||
-           this->tokens[this->currentTokenIndex].raw == ">" || this->tokens[this->currentTokenIndex].raw == "<" ||
-           this->tokens[this->currentTokenIndex].raw == ">=" || this->tokens[this->currentTokenIndex].raw == "<=" ||
-           this->tokens[this->currentTokenIndex].raw == "%") {
+    std::string currentRaw = this->tokens[this->currentTokenIndex].raw;
 
+    while (currentRaw == "+" || currentRaw == "-" ||
+           currentRaw == "==" || currentRaw == "!=" ||
+           currentRaw == ">" || currentRaw == "<" ||
+           currentRaw == ">=" || currentRaw == "<=" ||
+           currentRaw == "%") {
         auto currentToken = this->tokens[this->currentTokenIndex];
-
         this->expect(Token::Type::OPERATOR);
-
         left = std::make_unique<ExpressionNode>(std::move(left), std::move(this->term()), currentToken.raw);
+        currentRaw = this->tokens[this->currentTokenIndex].raw;
     }
 
     // && and ||
     if (this->currentTokenIndex < this->tokens.size() &&
-        (this->tokens[this->currentTokenIndex].raw == "||" || this->tokens[this->currentTokenIndex].raw == "&&")) {
-        auto currentToken = this->tokens[this->currentTokenIndex];
-
+        (currentRaw == "||" || currentRaw == "&&")) {
         this->expect(Token::Type::OPERATOR);
 
-        left = std::make_unique<ExpressionNode>(std::move(left), std::move(this->expression()), currentToken.raw);
+        left = std::make_unique<ExpressionNode>(std::move(left), std::move(this->expression()), currentRaw);
     }
 
     return left;
