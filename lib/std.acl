@@ -1,0 +1,55 @@
+let true = 1
+let false = 0
+
+# MacOS
+let OS_X_STDIN_FILENO = 0
+let OS_X_STDOUT_FILENO = 1
+
+# Linux
+let LINUX_SYS_WRITE = 4
+let LINUX_SYS_READ = 3
+
+# Printing to the console via stdout.
+# This function uses heavily low level syscalls to write to the console,
+# so it is recommended, to better not try to change anything about it.
+# TODO: Add windows support.
+# @author: BergerAPI
+# @date: Fri 31. Dec 2021
+# @param: string
+func print(content) {
+	if os() == "MacOS" {
+		# Prints to the standard output.
+		write(OS_X_STDOUT_FILENO, content, len(content))
+	} else {
+		# Prints to the standard output.
+		write(LINUX_SYS_WRITE, content, len(content))
+	}
+}
+
+# Does the same as print(), but adds a newline at the end.
+# @author: BergerAPI
+# @date: Fri 31. Dec 2021
+# @param: string
+func println(content) {
+	print(content + "\n")
+}
+
+# Reads from the standard input.
+# This function uses heavily low level syscalls to read from the console,
+# so it is recommended, to better not try to change anything about it.
+# @author: BergerAPI
+# @date: Fri 31. Dec 2021
+# @param: string
+func input() {
+	if os() == "MacOS" {
+		# Reads from the standard input.
+		return read(OS_X_STDIN_FILENO, content, len(content))
+	} else {
+		# Reads from the standard input.
+		return read(LINUX_SYS_READ, content, len(content))
+	}
+
+	# Something went wrong.
+	println("Something went miserably wrong.")
+	exit(1)
+}

@@ -36,6 +36,9 @@ int main(int argv, char **args) {
     }
 
     auto code = parse_file(args[1], true);
+
+    // code->print();
+
     Interpreter interpreter(code);
 
     // Interpret the AST
@@ -67,6 +70,6 @@ AbstractSyntaxTree *parse_file(const std::string &file_name, bool is_main_file) 
     auto ast = parser.parse();
 
     parsed_files.emplace_back(file_name, ast);
-
+    
     return ast;
 }

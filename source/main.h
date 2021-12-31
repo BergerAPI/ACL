@@ -21,6 +21,7 @@
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 #include "interpreter/interpreter.h"
+#include "unistd.h"
 
 // Parsing a file and add it to the list of parsed files
 AbstractSyntaxTree* parse_file(const std::string& file_name, bool is_main_file = false);

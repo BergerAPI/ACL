@@ -15,8 +15,6 @@
  */
 
 #include "interpreter.h"
-#include "memory"
-#include "chrono"
 
 void Interpreter::interpret() {
     // Interpreting all children in the AST
@@ -38,7 +36,7 @@ void Interpreter::interpretChild(AstChild *node) {
         auto realNode = dynamic_cast<ImportStatementNode *>(node);
 
         // Checking if we are in the root scope
-        if (this->current_scope->parent != nullptr)  {
+        if (this->current_scope->parent != nullptr) {
             throw std::runtime_error("Import statement is not allowed in inner scopes");
         }
 
@@ -55,7 +53,8 @@ void Interpreter::interpretChild(AstChild *node) {
             } else if (item->getIdentifier() == "VariableDefinition") {
                 auto realItem = dynamic_cast<VariableDefinitionNode *>(item);
 
-                this->current_scope->variables.emplace_back(realItem->name, this->interpretExpression(realItem->value.get()));
+                this->current_scope->variables.emplace_back(realItem->name,
+                                                            this->interpretExpression(realItem->value.get()));
             }
         }
     } else if (node->getIdentifier() == "VariableDefinition") {
@@ -188,11 +187,6 @@ void Interpreter::interpretChild(AstChild *node) {
         this->current_scope = this->current_scope->parent;
     } else if (node->getIdentifier() == "FunctionDefinition") {
         auto realNode = dynamic_cast<FunctionDefinitionNode *>(node);
-
-        // Printing all existing functions
-        for (const auto &item: this->current_scope->functions) {
-            std::cout << item.name << std::endl;
-        }
 
         // Adding to the current scope
         this->current_scope->functions.emplace_back(realNode->name, &realNode->parameters, &realNode->body,
@@ -329,7 +323,71 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
         auto realNode = dynamic_cast<FunctionCallNode *>(node);
 
         // Build-in
-        if (realNode->name == "print") {
+        if (realNode->name == "write") {
+            // Highly low level operation
+            if (realNode->args.size() != 3) throw std::runtime_error("Wrong number of arguments for write");
+
+            auto fd = this->interpretExpression(realNode->args[0].get());
+            auto buf = this->interpretExpression(realNode->args[1].get());
+            auto bytes = this->interpretExpression(realNode->args[2].get());
+
+            if (fd.type != BasicValue::Type::INT) throw std::runtime_error("write() first argument must be an integer");
+            if (buf.type != BasicValue::Type::STRING)
+                throw std::runtime_error("write() second argument must be a string");
+            if (bytes.type != BasicValue::Type::INT)
+                throw std::runtime_error("write() third argument must be an integer");
+
+            write(fd.intValue, buf.stringValue.c_str(), bytes.intValue);
+
+            return BasicValue();
+        } else if (realNode->name == "read") {
+            // Highly low level operation
+            if (realNode->args.size() != 3) throw std::runtime_error("Wrong number of arguments for write");
+
+            auto fd = this->interpretExpression(realNode->args[0].get());
+            auto buf = this->interpretExpression(realNode->args[1].get());
+            auto bytes = this->interpretExpression(realNode->args[2].get());
+
+            if (fd.type != BasicValue::Type::INT) throw std::runtime_error("read() first argument must be an integer");
+            if (buf.type != BasicValue::Type::STRING)
+                throw std::runtime_error("read() second argument must be a string");
+            if (bytes.type != BasicValue::Type::INT)
+                throw std::runtime_error("read() third argument must be an integer");
+
+            char *buffer = new char[bytes.intValue];
+
+            read(fd.intValue, buffer, bytes.intValue);
+
+            return BasicValue(std::string(buffer));
+        } else if (realNode->name == "os") {
+            // getting the os name
+            if (!realNode->args.empty()) throw std::runtime_error("Wrong number of arguments for os");
+
+            auto os = "Other";
+
+#ifdef _WIN32
+            os = "Windows";
+#elif _WIN64
+            os = "Windows";
+#elif __APPLE__ || __MACH__
+            os = "MacOS";
+#elif __linux__
+            os = "Linux";
+#endif
+
+            return BasicValue(os);
+        } else if (realNode->name == "exit") {
+            // getting the os name
+            if (realNode->args.size() != 1) throw std::runtime_error("Wrong number of arguments for exit");
+
+            auto code = this->interpretExpression(realNode->args[0].get());
+
+            if (code.type != BasicValue::Type::INT) throw std::runtime_error("exit() argument must be an integer");
+
+            exit(code.intValue);
+
+            return BasicValue();
+        } else if (realNode->name == "print") {
             if (realNode->args.empty())
                 throw std::runtime_error("print() takes at least one argument");
 
@@ -507,8 +565,8 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
 
                     for (auto &parameter: *item.parameters) {
                         new_scope->variables.emplace_back(parameter,
-                                                                    this->interpretExpression(
-                                                                            realNode->args[index].get()));
+                                                          this->interpretExpression(
+                                                                  realNode->args[index].get()));
                         index++;
                     }
 
@@ -555,23 +613,6 @@ std::vector<AstChild *> Interpreter::getAllNodesInNode(AstChild *node, bool igno
     std::vector<AstChild *> nodes;
 
     nodes.push_back(node);
-
-    if (node->getIdentifier() == "IfStatement") {
-        auto ifNode = dynamic_cast<IfStatementNode *>(node);
-
-        // Checking if the condition is true
-        if (this->interpretExpression(ifNode->condition.get()).intValue == 1) {
-            // The condition is true, so we add the true branch
-            for (auto &item: ifNode->thenBranch)
-                for (const auto &childNode: getAllNodesInNode(item.get(), ignoreLoops))
-                    nodes.push_back(childNode);
-        } else {
-            // The condition is false, so we add the false branch
-            for (auto &item: ifNode->elseBranch)
-                for (const auto &childNode: getAllNodesInNode(item.get(), ignoreLoops))
-                    nodes.push_back(childNode);
-        }
-    }
 
     if (!ignoreLoops) {
         if (node->getIdentifier() == "WhileStatement") {

@@ -41,7 +41,14 @@ public:
 
     explicit BasicValue(float value) : type(FLOAT), floatValue(value) {}
 
-    explicit BasicValue(std::string value) : type(STRING), stringValue(std::move(value)) {}
+    explicit BasicValue(std::string value) : type(STRING), stringValue(std::move(value)) {
+        // Replacing all '\\n' with a new line character.
+        auto a = stringValue.find("\\n");
+        while (a != std::string::npos) {
+            stringValue.replace(a, 2, "\n");
+            a = stringValue.find("\\n");
+        }
+    }
 
     explicit BasicValue() : type(VOID), stringValue("void"), intValue(0) {}
 
