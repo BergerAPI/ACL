@@ -151,14 +151,18 @@ std::unique_ptr<AstChild> Parser::ifStatement() {
         this->tokens[this->currentTokenIndex].raw == "else") {
         this->currentTokenIndex++;
 
-        this->expect(Token::Type::LEFT_BRACE);
+        if (this->tokens[this->currentTokenIndex].raw == "if") {
+            elseStatements.emplace_back(this->ifStatement());
+        } else {
+            this->expect(Token::Type::LEFT_BRACE);
 
-        while (this->currentTokenIndex < this->tokens.size() &&
-               this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_BRACE) {
-            elseStatements.emplace_back(this->parseChild());
+            while (this->currentTokenIndex < this->tokens.size() &&
+                   this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_BRACE) {
+                elseStatements.emplace_back(this->parseChild());
+            }
+
+            this->expect(Token::Type::RIGHT_BRACE);
         }
-
-        this->expect(Token::Type::RIGHT_BRACE);
     }
 
     return std::make_unique<IfStatementNode>(std::move(condition), std::move(thenStatements),

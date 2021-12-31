@@ -12,8 +12,13 @@ func factorial(num) {
 println(factorial(10))
 
 func lost(a, b){
-    println(a)
-    println(b)
+    if (a == "los") {
+        println(a + " - lost")
+    } else if (a == "lost") {
+        println(a + " - lost")
+    } else {
+        println(b)
+    }
 }
 
 lost("lost", 5)
