@@ -55,6 +55,21 @@ public:
 
     explicit BasicValue(std::vector<BasicValue> value) : type(LIST), listValue(std::move(value)) {}
 
+    std::string getValue() {
+        switch (type) {
+            case INT:
+                return std::to_string(intValue);
+            case FLOAT:
+                return std::to_string(floatValue);
+            case STRING:
+                return stringValue;
+            case LIST:
+                return "list";
+            case VOID:
+                return "void";
+        }
+    }
+
     friend std::ostream &operator<<(std::ostream &os, const BasicValue &value) {
         switch (value.type) {
             case INT:

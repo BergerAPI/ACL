@@ -19,13 +19,13 @@
 #include <fstream>
 #include "functions.h"
 
-BasicValue print(std::vector<BasicValue> &arguments) {
+BasicValue print(std::vector<BasicValue> arguments) {
     std::string result;
 
     // Iterating through the arguments
-    for (const auto &argument: arguments) {
+    for (auto argument: arguments) {
         // Printing the argument
-        result += argument.stringValue;
+        result += argument.getValue();
     }
 
     std::cout << result;
@@ -33,7 +33,7 @@ BasicValue print(std::vector<BasicValue> &arguments) {
     return BasicValue();
 }
 
-BasicValue println(std::vector<BasicValue> &arguments) {
+BasicValue println(std::vector<BasicValue> arguments) {
     print(arguments);
 
     std::cout << std::endl;
@@ -41,7 +41,7 @@ BasicValue println(std::vector<BasicValue> &arguments) {
     return BasicValue();
 }
 
-BasicValue input(std::vector<BasicValue> &arguments) {
+BasicValue input(std::vector<BasicValue> arguments) {
     if (!arguments.empty())
         throw std::runtime_error("Invalid number of arguments for input()");
 
@@ -52,7 +52,7 @@ BasicValue input(std::vector<BasicValue> &arguments) {
     return BasicValue(result);
 }
 
-BasicValue os(std::vector<BasicValue> &arguments) {
+BasicValue os(std::vector<BasicValue> arguments) {
     // Getting the os name
     if (arguments.empty()) throw std::runtime_error("Wrong number of arguments for os");
     auto os = "Other";
