@@ -16,3 +16,16 @@ if name == "Naruto" == TRUE || name == "Sasuke" == TRUE {
 
 print(a, b, c, answer)
 print("Length of name:", len(name))
+
+
+let lost = "lost"
+
+print(lost)
+
+lost = 5
+
+print(lost)
+
+lost = 5.6
+
+print(lost)

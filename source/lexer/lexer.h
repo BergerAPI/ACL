@@ -41,7 +41,7 @@ public:
 
     Type type;
     std::string raw;
-    [[maybe_unused]] int line;
+    int line;
 };
 
 // Sim;ple lexer with Identifier, Number, String, and Punctuation tokens.

@@ -59,12 +59,16 @@ std::unique_ptr<AstChild> Parser::functionDefinition() {
         auto currentToken = this->tokens[this->currentTokenIndex];
 
         if (currentToken.type != Token::Type::IDENTIFIER) {
-            throw std::runtime_error("Expected identifier");
+            throw std::runtime_error("Expected identifier line: " + std::to_string(currentToken.line + 1));
         }
 
         parameters.push_back(currentToken.raw);
 
         this->currentTokenIndex++;
+
+        if (this->currentTokenIndex  != this->tokens.size())
+            if (this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_PAREN)
+                this->expect(Token::Type::COMMA);
     }
 
     this->expect(Token::Type::RIGHT_PAREN);
@@ -342,7 +346,7 @@ void Parser::expect(Token::Type type) {
     if (currentToken.type != type)
         throw std::runtime_error(
                 "Unexpected token: " + currentToken.raw + ". We expected: " + std::to_string(type) + ", line: " +
-                std::to_string(currentToken.line));
+                std::to_string(currentToken.line + 1));
 }
 
 Parser::Parser(std::vector<Token> tokens) {
