@@ -60,11 +60,12 @@ AbstractSyntaxTree *parse_file(std::string file_name, bool is_main_file) {
 
     // Checking if it's a file from the default
     std::string std_path_raw = std::string(getenv("HOME")) + "/.acl/std/" + file_name;
+    std::ifstream std_path(std_path_raw);
+
 
     // We have an absolute path, because of the home directory, so we can check if it exists
-    if (std::filesystem::exists(std_path_raw) || std::filesystem::is_regular_file(std_path_raw)) {
-        file_name = std_path_raw;
-        is_main_file = true;
+    if (std_path.good() || std_path.is_open()) {
+        return parse_file(std_path_raw, true);
     }
 
     std::ifstream file((is_main_file ? "" : source_path + "/") + file_name);
