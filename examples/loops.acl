@@ -1,0 +1,23 @@
+
+# ACL does not yet have built-in booleans, but 1 & 0 act the same
+let true = 1
+let false = 0
+
+# For loop
+for i in range(10, 20) {
+    print("For loop is at " + i)
+}
+
+
+# Loops to 5, and then prints out a finish message
+let inWhile = true
+
+let i = 1
+while inWhile {
+    print("While loop is at " + i)
+    if i == 5 {
+        inWhile = false
+        print("Exiting while loop!")
+    }
+    i = i + 1
+}

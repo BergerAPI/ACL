@@ -1,0 +1,7 @@
+
+
+func output(out) {
+    print("Output called: " + out)
+}
+
+output("test")
