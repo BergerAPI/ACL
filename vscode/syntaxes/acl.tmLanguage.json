@@ -19,6 +19,9 @@
     },
     {
       "include": "#identifiers"
+    },
+    {
+      "include": "#booleans"
     }
   ],
   "repository": {
@@ -72,6 +75,14 @@
         {
           "name": "variable.other.identifier.acl",
           "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+        }
+      ]
+    },
+    "booleans": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.acl",
+          "match": "\\b(true|false)\\b"
         }
       ]
     }

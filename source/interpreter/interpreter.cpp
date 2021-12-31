@@ -387,37 +387,6 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             exit(code.intValue);
 
             return BasicValue();
-        } else if (realNode->name == "print") {
-            if (realNode->args.empty())
-                throw std::runtime_error("print() takes at least one argument");
-
-            std::string value;
-            int index = 0;
-
-            for (auto &item: realNode->args) {
-                auto expression = this->interpretExpression(item.get());
-
-                switch (expression.type) {
-                    case BasicValue::Type::INT:
-                        value += std::to_string(expression.intValue);
-                        break;
-                    case BasicValue::Type::FLOAT:
-                        value += std::to_string(expression.floatValue);
-                        break;
-                    case BasicValue::Type::STRING:
-                        value += expression.stringValue;
-                        break;
-                    default:
-                        throw std::runtime_error("Cannot print non-integer values");
-                }
-
-                if (index < realNode->args.size() - 1) value += " ";
-
-                index++;
-            }
-
-            std::cout << value << std::endl;
-            return BasicValue();
         } else if (realNode->name == "input") {
             if (!realNode->args.empty())
                 throw std::runtime_error("input() takes no arguments");

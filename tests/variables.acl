@@ -1,3 +1,5 @@
+import "std"
+
 let name = input()
 let a = "Are you (" + name + ")"
 let b = "really"
@@ -14,18 +16,18 @@ if name == "Naruto" == TRUE || name == "Sasuke" == TRUE {
     answer = "yes"
 }
 
-print(a, b, c, answer)
-print("Length of name:", len(name))
+println(a, b, c, answer)
+println("Length of name:", len(name))
 
 
 let lost = "lost"
 
-print(lost)
+println(lost)
 
 lost = 5
 
-print(lost)
+println(lost)
 
 lost = 5.6
 
-print(lost)
+println(lost)

@@ -1,7 +1,7 @@
-
+import "std"
 
 func output(out) {
-    print("Output called: " + out)
+    println("Output called: " + out)
 }
 
 output("test")

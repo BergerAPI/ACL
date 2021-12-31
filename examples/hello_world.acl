@@ -1,3 +1,4 @@
+import "std"
 
 let helloWorld = "Hello, World!"
-print(helloWorld)
+println(helloWorld)

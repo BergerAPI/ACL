@@ -1,8 +1,10 @@
-print("Please provide a file name:")
+import "std"
+
+println("Please provide a file name:")
 let fileName = input()
 
 if fileName != "" {
-    print("Please provide a file content:")
+    println("Please provide a file content:")
     let fileContent = input()
 
     writeFile(fileName, fileContent)

@@ -1,3 +1,5 @@
+import "std"
+
 # adsf
 func factorial(num) {
     if num == 0 {
@@ -7,11 +9,11 @@ func factorial(num) {
     }
 }
 
-print(factorial(10))
+println(factorial(10))
 
 func lost(a, b){
-    print(a)
-    print(b)
+    println(a)
+    println(b)
 }
 
 lost("lost", 5)

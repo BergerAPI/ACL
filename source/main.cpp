@@ -35,7 +35,7 @@ int main(int argv, char **args) {
         source_path = std::string(args[1]).substr(0, last_slash_idx);
     }
 
-    auto code = parse_file(args[1], true);
+    auto code = parse_file(std::string(args[1]), true);
 
     // code->print();
 
@@ -47,12 +47,24 @@ int main(int argv, char **args) {
     return 0;
 }
 
-AbstractSyntaxTree *parse_file(const std::string &file_name, bool is_main_file) {
+AbstractSyntaxTree *parse_file(std::string file_name, bool is_main_file) {
+    if (!file_name.ends_with(".acl"))
+        file_name += ".acl";
+
     // Checking if we already have the file parsed in out files vector
     for (auto &file: parsed_files) {
         if (file.first == file_name) {
             return file.second;
         }
+    }
+
+    // Checking if it's a file from the default
+    std::string std_path_raw = std::string(getenv("HOME")) + "/.acl/std/" + file_name;
+
+    // We have an absolute path, because of the home directory, so we can check if it exists
+    if (std::filesystem::exists(std_path_raw) || std::filesystem::is_regular_file(std_path_raw)) {
+        file_name = std_path_raw;
+        is_main_file = true;
     }
 
     std::ifstream file((is_main_file ? "" : source_path + "/") + file_name);
@@ -70,6 +82,6 @@ AbstractSyntaxTree *parse_file(const std::string &file_name, bool is_main_file) 
     auto ast = parser.parse();
 
     parsed_files.emplace_back(file_name, ast);
-    
+
     return ast;
 }

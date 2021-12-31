@@ -1,4 +1,6 @@
-print("starting while")
+import "std"
+
+println("starting while")
 
 let i = 0
 let m = 0
@@ -15,15 +17,15 @@ while 1 {
             break
         }
 
-        # print("m", m)
+        # println("m", m)
         m = m + 1
     }
 
-    # print("i", i)
+    # println("i", i)
     i = i + 1
 }
 
 let endTime = time()
 let timeElapsed = endTime - startTime
 
-print("time elapsed:", timeElapsed)
+println("time elapsed:", timeElapsed)
