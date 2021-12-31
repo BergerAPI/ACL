@@ -131,6 +131,8 @@ void Interpreter::interpretChild(AstChild *node) {
                     if (!hasBreak)
                         this->interpretChild(n);
 
+                    if (this->interpretExpression(condition).intValue == 0)
+                        break;
                 }
             }
 

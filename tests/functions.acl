@@ -10,8 +10,8 @@ func factorial(num) {
 print(factorial(10))
 
 func lost(a, b){
-print(a)
-print(b)
+    print(a)
+    print(b)
 }
 
 lost("lost", 5)
