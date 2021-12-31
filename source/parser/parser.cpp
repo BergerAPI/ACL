@@ -66,7 +66,7 @@ std::unique_ptr<AstChild> Parser::functionDefinition() {
 
         this->currentTokenIndex++;
 
-        if (this->currentTokenIndex  != this->tokens.size())
+        if (this->currentTokenIndex != this->tokens.size())
             if (this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_PAREN)
                 this->expect(Token::Type::COMMA);
     }
@@ -202,7 +202,9 @@ std::unique_ptr<AstChild> Parser::identifier() {
         return std::make_unique<VariableAssignmentNode>(currentToken.raw, std::move(value));
     }
 
-    return std::make_unique<VariableReferenceNode>(currentToken.raw);
+    auto res = std::make_unique<VariableReferenceNode>(currentToken.raw);
+    res->line = currentToken.line;
+    return res;
 }
 
 std::unique_ptr<AstChild> Parser::variableDefinition() {
@@ -213,7 +215,9 @@ std::unique_ptr<AstChild> Parser::variableDefinition() {
     this->expect(Token::Type::IDENTIFIER);
     this->expect(Token::Type::EQUALS);
 
-    return std::make_unique<VariableDefinitionNode>(variableName, std::move(this->expression()));
+    auto node = std::make_unique<VariableDefinitionNode>(variableName, std::move(this->expression()));
+    node->line = this->tokens[this->currentTokenIndex].line;
+    return node;
 }
 
 std::unique_ptr<AstChild> Parser::factor() {
@@ -292,6 +296,7 @@ std::unique_ptr<AstChild> Parser::expression() {
         auto currentToken = this->tokens[this->currentTokenIndex];
         this->expect(Token::Type::OPERATOR);
         left = std::make_unique<ExpressionNode>(std::move(left), std::move(this->term()), currentToken.raw);
+        left->line = currentToken.line;
         currentRaw = this->tokens[this->currentTokenIndex].raw;
     }
 
@@ -362,25 +367,34 @@ std::unique_ptr<AstChild> Parser::parseChild() {
         case Token::Type::LEFT_PAREN:
         case Token::Type::OPERATOR:
         case Token::Type::INT:
-        case Token::Type::FLOAT:
-            // Expression
-            return this->expression();
+        case Token::Type::FLOAT: {
+            auto expr = this->expression();
+            expr->line = token.line;
+            return expr;
+        }
 
-        case Token::Type::KEYWORD:
-            if (token.raw == "let") return this->variableDefinition();
-            else if (token.raw == "if") return this->ifStatement();
-            else if (token.raw == "while") return this->whileStatement();
-            else if (token.raw == "for") return this->forStatement();
-            else if (token.raw == "func") return this->functionDefinition();
-            else if (token.raw == "return") return this->returnStatement();
-            else if (token.raw == "import") return this->importStatement();
+        case Token::Type::KEYWORD: {
+            auto result = std::unique_ptr<AstChild>();
+
+            if (token.raw == "let") result = this->variableDefinition();
+            else if (token.raw == "if") result = this->ifStatement();
+            else if (token.raw == "while") result = this->whileStatement();
+            else if (token.raw == "for") result = this->forStatement();
+            else if (token.raw == "func") result = this->functionDefinition();
+            else if (token.raw == "return") result = this->returnStatement();
+            else if (token.raw == "import") result = this->importStatement();
             else if (token.raw == "break") {
                 this->currentTokenIndex++;
-                return std::make_unique<BreakStatementNode>();
+                result = std::make_unique<BreakStatementNode>();;
             } else if (token.raw == "continue") {
                 this->currentTokenIndex++;
-                return std::make_unique<ContinueStatementNode>();
+                result = std::make_unique<ContinueStatementNode>();
             } else throw std::runtime_error("Keyword not implemented: " + token.raw);
+
+            result->line = token.line;
+            return result;
+        }
+
 
         default:
             throw std::runtime_error(

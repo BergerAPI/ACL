@@ -23,6 +23,35 @@ void Interpreter::interpret() {
     }
 }
 
+void Interpreter::importFile(AstChild *node) {
+    auto realNode = dynamic_cast<ImportStatementNode *>(node);
+
+    // Checking if we are in the root scope
+    if (this->current_scope->parent != nullptr) {
+        throw std::runtime_error("Import statement is not allowed in inner scopes");
+    }
+
+    // Getting the parsed pAbstractSyntaxTree
+    auto pAbstractSyntaxTree = parse_file(realNode->path);
+
+    // Adding all functions and variables to the current scope
+    for (auto &item: pAbstractSyntaxTree->children) {
+        if (item->getIdentifier() == "FunctionDefinition") {
+            auto realItem = dynamic_cast<FunctionDefinitionNode *>(item);
+
+            this->current_scope->functions.emplace_back(realItem->name, &realItem->parameters, &realItem->body,
+                                                        this->current_scope);
+        } else if (item->getIdentifier() == "VariableDefinition") {
+            auto realItem = dynamic_cast<VariableDefinitionNode *>(item);
+
+            this->current_scope->variables.emplace_back(realItem->name,
+                                                        this->interpretExpression(realItem->value.get()));
+        } else if (item->getIdentifier() == "ImportStatement") {
+            this->importFile(item);
+        }
+    }
+}
+
 void Interpreter::interpretChild(AstChild *node) {
     // Interpret the child node
     if (node->getIdentifier() == "Expression" || node->getIdentifier() == "IntegerLiteral" ||
@@ -33,30 +62,7 @@ void Interpreter::interpretChild(AstChild *node) {
         // and store it in the value field of the node
         this->interpretExpression(node);
     } else if (node->getIdentifier() == "ImportStatement") {
-        auto realNode = dynamic_cast<ImportStatementNode *>(node);
-
-        // Checking if we are in the root scope
-        if (this->current_scope->parent != nullptr) {
-            throw std::runtime_error("Import statement is not allowed in inner scopes");
-        }
-
-        // Getting the parsed pAbstractSyntaxTree
-        auto pAbstractSyntaxTree = parse_file(realNode->path);
-
-        // Adding all functions and variables to the current scope
-        for (auto &item: pAbstractSyntaxTree->children) {
-            if (item->getIdentifier() == "FunctionDefinition") {
-                auto realItem = dynamic_cast<FunctionDefinitionNode *>(item);
-
-                this->current_scope->functions.emplace_back(realItem->name, &realItem->parameters, &realItem->body,
-                                                            this->current_scope);
-            } else if (item->getIdentifier() == "VariableDefinition") {
-                auto realItem = dynamic_cast<VariableDefinitionNode *>(item);
-
-                this->current_scope->variables.emplace_back(realItem->name,
-                                                            this->interpretExpression(realItem->value.get()));
-            }
-        }
+        importFile(node);
     } else if (node->getIdentifier() == "VariableDefinition") {
         auto realNode = dynamic_cast<VariableDefinitionNode *>(node);
 
@@ -286,7 +292,9 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             } else throw std::runtime_error("Unknown operator " + op);
         }
 
-        throw std::runtime_error("Cannot perform math operation on non-integer values");
+        throw std::runtime_error(
+                "Cannot perform math operation on non-integer values, line: " + std::to_string(realNode->line) +
+                ". Values: " + std::to_string(left.type) + " and " + std::to_string(right.type));
     } else if (node->getIdentifier() == "IntegerLiteral") {
         auto realNode = dynamic_cast<IntegerLiteralNode *>(node);
         return BasicValue(realNode->value);
@@ -318,7 +326,8 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             }
         }
 
-        throw std::runtime_error("Variable " + realNode->name + " is not defined");
+        throw std::runtime_error(
+                "Variable " + realNode->name + " is not defined, line: " + std::to_string(realNode->line + 1));
     } else if (node->getIdentifier() == "FunctionCall") {
         auto realNode = dynamic_cast<FunctionCallNode *>(node);
 
@@ -383,7 +392,9 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             auto basic_value = this->interpretExpression(realNode->args[0].get());
 
             if (basic_value.type != BasicValue::Type::STRING)
-                throw std::runtime_error("len() can only be used on strings and lists");
+                throw std::runtime_error(
+                        "len() can only be used on strings and lists, line: " + std::to_string(realNode->line + 1) +
+                        ". Used on: " + std::to_string(basic_value.type));
 
             // Returning an integer
             return BasicValue((int) basic_value.stringValue.size());
@@ -561,6 +572,27 @@ std::vector<AstChild *> Interpreter::getAllNodesInNode(AstChild *node, bool igno
     std::vector<AstChild *> nodes;
 
     nodes.push_back(node);
+
+    if (node->getIdentifier() == "IfStatement") {
+        // Removing the node (This is a workaround, because other nodes need to be added too, even if they
+        // don't have a special case in this function)
+        nodes.pop_back();
+
+        auto ifNode = dynamic_cast<IfStatementNode *>(node);
+
+        if (this->interpretExpression(ifNode->condition.get()).intValue == 1)
+            for (auto &nItem: ifNode->thenBranch) {
+                for (auto &item: this->getAllNodesInNode(nItem.get(), ignoreLoops)) {
+                    nodes.push_back(item);
+                }
+            }
+        else
+            for (auto &nItem: ifNode->elseBranch) {
+                for (auto &item: this->getAllNodesInNode(nItem.get(), ignoreLoops)) {
+                    nodes.push_back(item);
+                }
+            }
+    }
 
     if (!ignoreLoops) {
         if (node->getIdentifier() == "WhileStatement") {

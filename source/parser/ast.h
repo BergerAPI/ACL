@@ -29,6 +29,9 @@ public:
     virtual std::string getIdentifier() = 0;
 
     virtual void print() = 0;
+
+    // the line where the node is defined
+    int line;
 };
 
 class ExpressionNode : public AstChild {
