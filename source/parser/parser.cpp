@@ -278,10 +278,10 @@ std::unique_ptr<AstChild> Parser::expression() {
         return left;
     }
 
-    while ((this->tokens[this->currentTokenIndex].raw == "+" || this->tokens[this->currentTokenIndex].raw == "-" ||
-            this->tokens[this->currentTokenIndex].raw == "==" || this->tokens[this->currentTokenIndex].raw == "!=" ||
-            this->tokens[this->currentTokenIndex].raw == ">" || this->tokens[this->currentTokenIndex].raw == "<" ||
-            this->tokens[this->currentTokenIndex].raw == ">=" || this->tokens[this->currentTokenIndex].raw == "<=") ||
+    while (this->tokens[this->currentTokenIndex].raw == "+" || this->tokens[this->currentTokenIndex].raw == "-" ||
+           this->tokens[this->currentTokenIndex].raw == "==" || this->tokens[this->currentTokenIndex].raw == "!=" ||
+           this->tokens[this->currentTokenIndex].raw == ">" || this->tokens[this->currentTokenIndex].raw == "<" ||
+           this->tokens[this->currentTokenIndex].raw == ">=" || this->tokens[this->currentTokenIndex].raw == "<=" ||
            this->tokens[this->currentTokenIndex].raw == "%") {
 
         auto currentToken = this->tokens[this->currentTokenIndex];
