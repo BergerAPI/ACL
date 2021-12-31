@@ -340,25 +340,14 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             write(fd.intValue, buf.stringValue.c_str(), bytes.intValue);
 
             return BasicValue();
-        } else if (realNode->name == "read") {
-            // Highly low level operation
-            if (realNode->args.size() != 3) throw std::runtime_error("Wrong number of arguments for write");
+        } else if (realNode->name == "input") {
+            // Get input from user
+            if (!realNode->args.empty()) throw std::runtime_error("Wrong number of arguments for input");
 
-            auto fd = this->interpretExpression(realNode->args[0].get());
-            auto buf = this->interpretExpression(realNode->args[1].get());
-            auto bytes = this->interpretExpression(realNode->args[2].get());
+            std::string input;
+            std::getline(std::cin, input);
 
-            if (fd.type != BasicValue::Type::INT) throw std::runtime_error("read() first argument must be an integer");
-            if (buf.type != BasicValue::Type::STRING)
-                throw std::runtime_error("read() second argument must be a string");
-            if (bytes.type != BasicValue::Type::INT)
-                throw std::runtime_error("read() third argument must be an integer");
-
-            char *buffer = new char[bytes.intValue];
-
-            read(fd.intValue, buffer, bytes.intValue);
-
-            return BasicValue(std::string(buffer));
+            return BasicValue(input);
         } else if (realNode->name == "os") {
             // getting the os name
             if (!realNode->args.empty()) throw std::runtime_error("Wrong number of arguments for os");
@@ -387,16 +376,6 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             exit(code.intValue);
 
             return BasicValue();
-        } else if (realNode->name == "input") {
-            if (!realNode->args.empty())
-                throw std::runtime_error("input() takes no arguments");
-
-            // Reading the entire line
-            std::string value;
-
-            std::getline(std::cin, value);
-
-            return BasicValue(value);
         } else if (realNode->name == "len") {
             if (realNode->args.size() != 1)
                 throw std::runtime_error("len() takes exactly one argument");

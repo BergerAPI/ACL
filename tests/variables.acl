@@ -7,17 +7,14 @@ let c = "cool?"
 
 c = "Naruto/Sasuke?"
 
-let TRUE = 1
-let FALSE = 0
-
 let answer = "no"
 
-if name == "Naruto" == TRUE || name == "Sasuke" == TRUE {
+if name == "Naruto" == true || name == "Sasuke" == true {
     answer = "yes"
 }
 
-println(a, b, c, answer)
-println("Length of name:", len(name))
+println(a + " " + b + " " + c + " " + answer)
+println("Length of name: " + len(name))
 
 
 let lost = "lost"

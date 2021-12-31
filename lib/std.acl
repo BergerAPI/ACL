@@ -33,23 +33,3 @@ func print(content) {
 func println(content) {
 	print(content + "\n")
 }
-
-# Reads from the standard input.
-# This function uses heavily low level syscalls to read from the console,
-# so it is recommended, to better not try to change anything about it.
-# @author: BergerAPI
-# @date: Fri 31. Dec 2021
-# @param: string
-func input() {
-	if os() == "MacOS" {
-		# Reads from the standard input.
-		return read(OS_X_STDIN_FILENO, content, len(content))
-	} else {
-		# Reads from the standard input.
-		return read(LINUX_SYS_READ, content, len(content))
-	}
-
-	# Something went wrong.
-	println("Something went miserably wrong.")
-	exit(1)
-}
