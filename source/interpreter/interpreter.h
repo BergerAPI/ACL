@@ -27,6 +27,7 @@
 #include <memory>
 #include <chrono>
 #include <unistd.h>
+#include "functions.h"
 
 class Scope;
 
