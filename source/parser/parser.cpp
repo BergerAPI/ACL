@@ -274,13 +274,16 @@ std::unique_ptr<AstChild> Parser::term() {
 
 std::unique_ptr<AstChild> Parser::expression() {
     auto left = this->term();
+    if (this->currentTokenIndex >= this->tokens.size()) {
+        return left;
+    }
 
-    while (this->currentTokenIndex < this->tokens.size() &&
-           (this->tokens[this->currentTokenIndex].raw == "+" || this->tokens[this->currentTokenIndex].raw == "-" ||
+    while ((this->tokens[this->currentTokenIndex].raw == "+" || this->tokens[this->currentTokenIndex].raw == "-" ||
             this->tokens[this->currentTokenIndex].raw == "==" || this->tokens[this->currentTokenIndex].raw == "!=" ||
             this->tokens[this->currentTokenIndex].raw == ">" || this->tokens[this->currentTokenIndex].raw == "<" ||
             this->tokens[this->currentTokenIndex].raw == ">=" || this->tokens[this->currentTokenIndex].raw == "<=") ||
            this->tokens[this->currentTokenIndex].raw == "%") {
+
         auto currentToken = this->tokens[this->currentTokenIndex];
 
         this->expect(Token::Type::OPERATOR);

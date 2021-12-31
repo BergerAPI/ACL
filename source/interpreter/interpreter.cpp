@@ -15,6 +15,8 @@
  */
 
 #include "interpreter.h"
+#include "memory"
+#include "chrono"
 
 void Interpreter::interpret() {
     // Interpreting all children in the AST
