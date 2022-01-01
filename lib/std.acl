@@ -45,3 +45,11 @@ external func len()
 # @param: step: the step of the range
 # @return: list of numbers in the range
 external func range()
+
+# Converting a string to an int. This function is defined in the source code
+# of the interpreter, and should not be changed.
+# This function takes one argument, and returns the integer value of the string.
+# @author: BergerAPI
+# @param: string
+# @return: integer value of the string
+external func stoi()

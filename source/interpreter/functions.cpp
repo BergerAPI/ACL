@@ -19,6 +19,16 @@
 #include <fstream>
 #include "functions.h"
 
+BasicValue stoi(std::vector<BasicValue> arguments) {
+    if (arguments.size() != 1) {
+        throw std::runtime_error("Invalid number of arguments");
+    }
+    if (arguments[0].type != BasicValue::Type::STRING) {
+        throw std::runtime_error("Invalid argument type");
+    }
+    return BasicValue(std::stoi(arguments[0].stringValue));
+}
+
 BasicValue print(std::vector<BasicValue> arguments) {
     std::string result;
 
@@ -217,9 +227,10 @@ const std::map<std::string, void *> functionMap = {
         {"writeFile", (void *) &writeFile},
         {"range",     (void *) &range},
         {"list",      (void *) &list},
+        {"stoi",      (void *) &stoi}
 };
 
-BasicValue executeFunction(const std::string& name, const std::vector<BasicValue>& arguments) {
+BasicValue executeFunction(const std::string &name, const std::vector<BasicValue> &arguments) {
     // Searching for the function
     auto function = functionMap.find(name);
 
@@ -233,7 +244,7 @@ BasicValue executeFunction(const std::string& name, const std::vector<BasicValue
     return BasicValue(-1);
 }
 
-bool function_exists(const std::string& name) {
+bool function_exists(const std::string &name) {
     // Searching for the function
     auto function = functionMap.find(name);
 
