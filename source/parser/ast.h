@@ -441,6 +441,31 @@ public:
     }
 };
 
+class ArrayNode : public AstChild {
+public:
+    ~ArrayNode() override = default;
+
+    std::vector<std::unique_ptr<AstChild>> elements;
+
+    // Constructor requires a vector of elements
+    explicit ArrayNode(std::vector<std::unique_ptr<AstChild>> elements) {
+        this->elements = std::move(elements);
+    }
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "Array";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(";
+        for (auto &element: elements) {
+            element->print();
+            std::cout << " ";
+        }
+        std::cout << ")";
+    }
+};
+
 class AbstractSyntaxTree {
 public:
     virtual ~AbstractSyntaxTree() = default;

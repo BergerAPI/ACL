@@ -403,6 +403,16 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
         }
 
         throw std::runtime_error("Function " + realNode->name + " is not defined");
+    } else if (node->getIdentifier() == "Array") {
+        // Defining an array
+        auto realNode = dynamic_cast<ArrayNode *>(node);
+
+        std::vector<BasicValue> values;
+
+        for (auto &value: realNode->elements)
+            values.push_back(this->interpretExpression(value.get()));
+
+        return BasicValue(values);
     }
 
     throw std::runtime_error("Cannot interpret expression: " + node->getIdentifier());

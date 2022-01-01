@@ -5,6 +5,12 @@ for i in range(10, 20) {
     println("For loop is at " + i)
 }
 
+for a in ["a", "b", "c", "d", "e"] {
+    print(a)
+}
+
+println()
+
 # Loops to 5, and then prints out a finish message
 let inWhile = true
 

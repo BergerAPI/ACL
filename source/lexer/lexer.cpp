@@ -184,6 +184,16 @@ std::vector<Token> Lexer::tokenize(std::istream &input) {
                 continue;
             }
 
+            if (c == '[') {
+                tokens.emplace_back(Token::Type::LEFT_BRACKET, std::string(1, c), line_index);
+                continue;
+            }
+
+            if (c == ']') {
+                tokens.emplace_back(Token::Type::RIGHT_BRACKET, std::string(1, c), line_index);
+                continue;
+            }
+
             if (c == '"') {
                 std::string string;
                 i++;

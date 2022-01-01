@@ -90,9 +90,11 @@ std::unique_ptr<AstChild> Parser::functionDefinition() {
     }
 
     if (this->tokens[this->currentTokenIndex].type == Token::Type::LEFT_BRACE)
-        throw std::runtime_error("External functions can't have a body. Line: " + std::to_string(this->tokens[this->currentTokenIndex].line + 1));
+        throw std::runtime_error("External functions can't have a body. Line: " +
+                                 std::to_string(this->tokens[this->currentTokenIndex].line + 1));
 
-    return std::make_unique<FunctionDefinitionNode>(std::move(functionName), std::move(parameters), std::move(body), isExternal);
+    return std::make_unique<FunctionDefinitionNode>(std::move(functionName), std::move(parameters), std::move(body),
+                                                    isExternal);
 }
 
 std::unique_ptr<AstChild> Parser::forStatement() {
@@ -108,7 +110,7 @@ std::unique_ptr<AstChild> Parser::forStatement() {
 
     this->currentTokenIndex++;
 
-    auto iterator = this->identifier();
+    auto iterator = this->expression();
 
     std::vector<std::unique_ptr<AstChild>> thenStatements;
 
@@ -273,6 +275,24 @@ std::unique_ptr<AstChild> Parser::factor() {
             }
         }
 
+        case Token::Type::LEFT_BRACKET: {
+            std::vector<std::unique_ptr<AstChild>> elements;
+
+            this->currentTokenIndex++;
+
+            while (this->currentTokenIndex <= this->tokens.size() &&
+                   this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_BRACKET) {
+                elements.push_back(this->expression());
+
+                if (this->tokens[this->currentTokenIndex].type == Token::Type::COMMA)
+                    this->currentTokenIndex++;
+            }
+
+            this->expect(Token::Type::RIGHT_BRACKET);
+
+            return std::make_unique<ArrayNode>(std::move(elements));
+        }
+
         default:
             break;
     }
@@ -309,9 +329,12 @@ std::unique_ptr<AstChild> Parser::expression() {
            currentRaw == ">=" || currentRaw == "<=" ||
            currentRaw == "%") {
         auto currentToken = this->tokens[this->currentTokenIndex];
+
         this->expect(Token::Type::OPERATOR);
+
         left = std::make_unique<ExpressionNode>(std::move(left), std::move(this->term()), currentToken.raw);
         left->line = currentToken.line;
+
         currentRaw = this->tokens[this->currentTokenIndex].raw;
     }
 
@@ -382,7 +405,8 @@ std::unique_ptr<AstChild> Parser::parseChild() {
         case Token::Type::LEFT_PAREN:
         case Token::Type::OPERATOR:
         case Token::Type::INT:
-        case Token::Type::FLOAT: {
+        case Token::Type::FLOAT:
+        case Token::Type::LEFT_BRACKET: {
             auto expr = this->expression();
             expr->line = token.line;
             return expr;
