@@ -1,2 +1,47 @@
 const true = 1
 const false = 0
+
+# Printing to the console without a new line. This function is defined in the source code
+# of the interpreter, and should not be changed.
+# This function is able to take any number of arguments (type undefined), and will print
+# them to the console.
+# @author: BergerAPI
+# @param: *args: any number of arguments
+# @return: void
+external func print()
+
+# Printing to the console with a new line. This function is defined in the source code
+# of the interpreter, and should not be changed.
+# This function is able to take any number of arguments (type undefined), and will print
+# them to the console.
+# @author: BergerAPI
+# @param: *args: any number of arguments
+# @return: void
+external func println()
+
+# Getting the value of a variable. This function is defined in the source code
+# of the interpreter, and should not be changed.
+# This function takes no arguments, and returns the value of the user input
+# @author: BergerAPI
+# @param: void
+# @return: value of the variable
+external func input()
+
+# Returns the length of a string, or list. This function is defined in the source code
+# of the interpreter, and should not be changed.
+# This function takes one argument, and returns the length of the argument.
+# @author: BergerAPI
+# @param: string or list
+# @return: length of the argument
+external func len()
+
+# Getting a list of numbers in a specific range. This function is made for "for" loops, but
+# can be used for other purposes. It is defined in the source code of the interpreter, and
+# should not be changed.
+# This function takes 1-3 arguments, and returns a list of numbers in the range specified.
+# @author: BergerAPI
+# @param: start: the start of the range
+# @param: end: the end of the range
+# @param: step: the step of the range
+# @return: list of numbers in the range
+external func range()

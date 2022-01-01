@@ -365,13 +365,15 @@ public:
     std::string name;
     std::vector<std::string> parameters;
     std::vector<std::unique_ptr<AstChild>> body;
+    bool isExternal;
 
     // Constructor requires a name, args and body
     FunctionDefinitionNode(std::string name, std::vector<std::string> parameters,
-                           std::vector<std::unique_ptr<AstChild>> body) {
+                           std::vector<std::unique_ptr<AstChild>> body, bool isExternal) {
         this->name = std::move(name);
         this->parameters = std::move(parameters);
         this->body = std::move(body);
+        this->isExternal = isExternal;
     }
 
     [[nodiscard]] std::string getIdentifier() override {

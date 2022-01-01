@@ -1,9 +1,5 @@
 import "std"
 
-# ACL does not yet have built-in booleans, but 1 & 0 act the same
-let true = 1
-let false = 0
-
 # For loop
 for i in range(10, 20) {
     println("For loop is at " + i)

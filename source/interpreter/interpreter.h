@@ -37,8 +37,9 @@ public:
     std::vector<std::string> *parameters;
     std::vector<std::unique_ptr<AstChild>> *body;
     Scope *scope;
+    bool isExternal;
 
-    explicit InterpreterFunction(std::string name, std::vector<std::string> *parameters, std::vector<std::unique_ptr<AstChild>> *body, Scope* scope) : name(std::move(name)), parameters(parameters), body(body), scope(scope) {}
+    explicit InterpreterFunction(std::string name, std::vector<std::string> *parameters, std::vector<std::unique_ptr<AstChild>> *body, Scope* scope, bool isExternal) : name(std::move(name)), parameters(parameters), body(body), scope(scope), isExternal(isExternal) {}
 };
 
 class InterpretedVariable {

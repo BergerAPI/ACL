@@ -43,7 +43,12 @@ std::unique_ptr<AstChild> Parser::returnStatement() {
 
 
 std::unique_ptr<AstChild> Parser::functionDefinition() {
+    auto isExternal = this->tokens[this->currentTokenIndex].raw == "external";
+
     this->currentTokenIndex++;
+
+    if (isExternal)
+        this->currentTokenIndex++;
 
     auto functionName = this->tokens[this->currentTokenIndex].raw;
 
@@ -72,16 +77,22 @@ std::unique_ptr<AstChild> Parser::functionDefinition() {
     }
 
     this->expect(Token::Type::RIGHT_PAREN);
-    this->expect(Token::Type::LEFT_BRACE);
 
-    while (this->currentTokenIndex < this->tokens.size() &&
-           this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_BRACE) {
-        body.emplace_back(this->parseChild());
+    if (!isExternal) {
+        this->expect(Token::Type::LEFT_BRACE);
+
+        while (this->currentTokenIndex < this->tokens.size() &&
+               this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_BRACE) {
+            body.emplace_back(this->parseChild());
+        }
+
+        this->expect(Token::Type::RIGHT_BRACE);
     }
 
-    this->expect(Token::Type::RIGHT_BRACE);
+    if (this->tokens[this->currentTokenIndex].type == Token::Type::LEFT_BRACE)
+        throw std::runtime_error("External functions can't have a body. Line: " + std::to_string(this->tokens[this->currentTokenIndex].line + 1));
 
-    return std::make_unique<FunctionDefinitionNode>(std::move(functionName), std::move(parameters), std::move(body));
+    return std::make_unique<FunctionDefinitionNode>(std::move(functionName), std::move(parameters), std::move(body), isExternal);
 }
 
 std::unique_ptr<AstChild> Parser::forStatement() {
@@ -384,7 +395,7 @@ std::unique_ptr<AstChild> Parser::parseChild() {
             else if (token.raw == "if") result = this->ifStatement();
             else if (token.raw == "while") result = this->whileStatement();
             else if (token.raw == "for") result = this->forStatement();
-            else if (token.raw == "func") result = this->functionDefinition();
+            else if (token.raw == "func" || token.raw == "external") result = this->functionDefinition();
             else if (token.raw == "return") result = this->returnStatement();
             else if (token.raw == "import") result = this->importStatement();
             else if (token.raw == "break") {

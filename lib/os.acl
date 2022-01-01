@@ -1,0 +1,20 @@
+import "std"
+
+# Returns the name of the current os, the user is running.
+# This function takes no arguments, and returns the name of the current os.
+# Possible values are:
+# - windows
+# - linux
+# - macos
+# @author: BergerAPI
+# @param: void
+# @return: name of the current os
+external func os()
+
+# Closing the program. This function is defined in the source code
+# of the interpreter, and should not be changed.
+# This functions takes up to one argument, and closes the program.
+# @author: BergerAPI
+# @param: void/number
+# @return: void
+external func exit()

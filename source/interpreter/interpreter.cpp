@@ -40,7 +40,7 @@ void Interpreter::importFile(AstChild *node) {
             auto realItem = dynamic_cast<FunctionDefinitionNode *>(item);
 
             this->current_scope->functions.emplace_back(realItem->name, &realItem->parameters, &realItem->body,
-                                                        this->current_scope);
+                                                        this->current_scope, realItem->isExternal);
         } else if (item->getIdentifier() == "VariableDefinition") {
             auto realItem = dynamic_cast<VariableDefinitionNode *>(item);
 
@@ -199,7 +199,7 @@ void Interpreter::interpretChild(AstChild *node) {
 
         // Adding to the current scope
         this->current_scope->functions.emplace_back(realNode->name, &realNode->parameters, &realNode->body,
-                                                    this->current_scope);
+                                                    this->current_scope, realNode->isExternal);
     }
 }
 
@@ -334,21 +334,21 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
     } else if (node->getIdentifier() == "FunctionCall") {
         auto realNode = dynamic_cast<FunctionCallNode *>(node);
 
-        // Build-in
-        if (function_exists(realNode->name)) {
-            // Mapping the arguments, so all arguments are BasicValues
-            std::vector<BasicValue> args;
-
-            for (auto &arg: realNode->args)
-                args.push_back(this->interpretExpression(arg.get()));
-
-            return executeFunction(realNode->name, args);
-        }
-
         // Searching in the all the scopes above the current scope
         for (auto scope = this->current_scope; scope != nullptr; scope = scope->parent) {
             for (const auto &item: scope->functions) {
                 if (item.name == realNode->name) {
+                    // Build-in
+                    if (item.isExternal && function_exists(realNode->name)) {
+                        // Mapping the arguments, so all arguments are BasicValues
+                        std::vector<BasicValue> args;
+
+                        for (auto &arg: realNode->args)
+                            args.push_back(this->interpretExpression(arg.get()));
+
+                        return executeFunction(realNode->name, args);
+                    }
+
                     // Checking the arguments
                     if (item.parameters->size() != realNode->args.size())
                         throw std::runtime_error("Wrong number of arguments");
