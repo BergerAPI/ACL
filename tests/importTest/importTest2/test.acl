@@ -1,0 +1,5 @@
+import "std"
+
+func test(a, b){
+println("test: " + (a + b))
+}

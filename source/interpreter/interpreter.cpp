@@ -31,25 +31,27 @@ void Interpreter::importFile(AstChild *node) {
         throw std::runtime_error("Import statement is not allowed in inner scopes");
     }
 
-    // Getting the parsed pAbstractSyntaxTree
-    auto pAbstractSyntaxTree = parse_file(realNode->path);
+    // Getting the parsed abstractSyntaxTree
+    auto abstractSyntaxTreeList = parse_file(realNode->path);
 
-    // Adding all functions and variables to the current scope
-    for (auto &item: pAbstractSyntaxTree->children) {
-        if (item->getIdentifier() == "FunctionDefinition") {
-            auto realItem = dynamic_cast<FunctionDefinitionNode *>(item);
+    for (const auto &abstractSyntaxTree: abstractSyntaxTreeList)
+        // Adding all functions and variables to the current scope
+        for (auto &item: abstractSyntaxTree->children) {
+            if (item->getIdentifier() == "FunctionDefinition") {
+                auto realItem = dynamic_cast<FunctionDefinitionNode *>(item);
 
-            this->current_scope->functions.emplace_back(realItem->name, &realItem->parameters, &realItem->body,
-                                                        this->current_scope, realItem->isExternal);
-        } else if (item->getIdentifier() == "VariableDefinition") {
-            auto realItem = dynamic_cast<VariableDefinitionNode *>(item);
+                this->current_scope->functions.emplace_back(realItem->name, &realItem->parameters, &realItem->body,
+                                                            this->current_scope, realItem->isExternal);
+            } else if (item->getIdentifier() == "VariableDefinition") {
+                auto realItem = dynamic_cast<VariableDefinitionNode *>(item);
 
-            this->current_scope->variables.emplace_back(realItem->name,
-                                                        this->interpretExpression(realItem->value.get()), realItem->constant);
-        } else if (item->getIdentifier() == "ImportStatement") {
-            this->importFile(item);
+                this->current_scope->variables.emplace_back(realItem->name,
+                                                            this->interpretExpression(realItem->value.get()),
+                                                            realItem->constant);
+            } else if (item->getIdentifier() == "ImportStatement") {
+                this->importFile(item);
+            }
         }
-    }
 }
 
 void Interpreter::interpretChild(AstChild *node) {
@@ -67,7 +69,8 @@ void Interpreter::interpretChild(AstChild *node) {
         auto realNode = dynamic_cast<VariableDefinitionNode *>(node);
 
         this->current_scope->variables.emplace_back(realNode->name,
-                                                    this->interpretExpression(realNode->value.get()), realNode->constant);
+                                                    this->interpretExpression(realNode->value.get()),
+                                                    realNode->constant);
     } else if (node->getIdentifier() == "VariableAssignment") {
         auto realNode = dynamic_cast<VariableAssignmentNode *>(node);
 

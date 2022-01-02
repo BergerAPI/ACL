@@ -15,6 +15,7 @@
  */
 
 #include "main.h"
+#include <filesystem>
 #include "utils.h"
 
 // A list of all parsed files.
@@ -36,7 +37,7 @@ int main(int argv, char **args) {
         source_path = std::string(args[1]).substr(0, last_slash_idx);
     }
 
-    auto code = parse_file(std::string(args[1]), true);
+    auto code = parse_file(std::string(args[1]), true)[0];
 
     code->print();
 
@@ -48,14 +49,16 @@ int main(int argv, char **args) {
     return 0;
 }
 
-AbstractSyntaxTree *parse_file(std::string file_path, bool is_main_file) {
+std::vector<AbstractSyntaxTree *> parse_file(std::string file_path, bool is_main_file) {
+    vector<AbstractSyntaxTree *> trees;
     if (!file_path.ends_with(".acl"))
         file_path += ".acl";
 
     // Checking if we already have the file parsed in out files vector
     for (auto &file: parsed_files) {
         if (file.first == file_path) {
-            return file.second;
+            trees.push_back(file.second);
+            return trees;
         }
     }
 
@@ -66,14 +69,31 @@ AbstractSyntaxTree *parse_file(std::string file_path, bool is_main_file) {
 
     // We have an absolute path, because of the home directory, so we can check if it exists
     if (std_path.good() || std_path.is_open()) {
+        std_path.close();
         return parse_file(std_path_raw, true);
     }
 
     std::ifstream file((is_main_file ? "" : source_path + "/") + file_path);
 
     if (!file.is_open()) {
-        throw std::runtime_error("File not found: " + (is_main_file ? "" : source_path + "/") + file_path);
+        auto splitPath = splitString(file_path, "/");
+        auto fileName = splitPath[splitPath.size() - 1];
+        if (!fileName.starts_with("*")) {
+            throw std::runtime_error("File not found: " + (is_main_file ? "" : source_path + "/") + file_path);
+        }
+        splitPath.pop_back();
+        std::string restPath;
+        for (const auto &item: splitPath)
+            restPath += item + "/";
+
+        for (const auto &entry: std::filesystem::directory_iterator(source_path + "/" + restPath)) {
+            string foundFile = entry.path();
+            trees.push_back(parse_file(foundFile, true)[0]);
+        }
+        return trees;
     }
+
+    //   /test/test/*   /test/test/utils.acl /test/test/main.acl
 
     std::vector<Token> tokens = Lexer::tokenize(file);
 
@@ -85,5 +105,7 @@ AbstractSyntaxTree *parse_file(std::string file_path, bool is_main_file) {
 
     parsed_files.emplace_back(file_path, ast);
 
-    return ast;
+    file.close();
+    trees.push_back(ast);
+    return trees;
 }

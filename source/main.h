@@ -25,6 +25,6 @@
 #include "unistd.h"
 
 // Parsing a file and add it to the list of parsed files
-AbstractSyntaxTree* parse_file(std::string file_path, bool is_main_file = false);
+std::vector<AbstractSyntaxTree*> parse_file(std::string file_path, bool is_main_file = false);
 
 #endif //ACL_MAIN_H

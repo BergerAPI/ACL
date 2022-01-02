@@ -1,3 +1,4 @@
-import "functions.acl"
+import "importTest/importTest2/*"
 
-print(factorial(10))
+print(test(10, 5))
+hello()
