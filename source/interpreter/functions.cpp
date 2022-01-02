@@ -64,7 +64,7 @@ BasicValue input(std::vector<BasicValue> arguments) {
 
 BasicValue os(std::vector<BasicValue> arguments) {
     // Getting the os name
-    if (arguments.empty()) throw std::runtime_error("Wrong number of arguments for os");
+    if (!arguments.empty()) throw std::runtime_error("Wrong number of arguments for os");
     auto os = "Other";
 
 #ifdef _WIN32
