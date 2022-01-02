@@ -413,6 +413,24 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             values.push_back(this->interpretExpression(value.get()));
 
         return BasicValue(values);
+    } else if (node->getIdentifier() == "ArrayAccess") {
+        // Accessing an array
+        auto realNode = dynamic_cast<ArrayAccessNode *>(node);
+
+        auto array = this->interpretExpression(realNode->array.get());
+
+        if (array.type != BasicValue::Type::LIST)
+            throw std::runtime_error("Array is not an array");
+
+        auto index = this->interpretExpression(realNode->index.get());
+
+        if (index.type != BasicValue::Type::INT)
+            throw std::runtime_error("Index is not an integer");
+
+        if (index.intValue < 0 || index.intValue >= array.listValue.size())
+            throw std::runtime_error("Index out of bounds");
+
+        return array.listValue[index.intValue];
     }
 
     throw std::runtime_error("Cannot interpret expression: " + node->getIdentifier());

@@ -466,13 +466,39 @@ public:
     }
 };
 
+class ArrayAccessNode : public AstChild {
+public:
+    ~ArrayAccessNode() override = default;
+
+    std::unique_ptr<AstChild> array;
+    std::unique_ptr<AstChild> index;
+
+    // Constructor requires an array and index
+    ArrayAccessNode(std::unique_ptr<AstChild> array, std::unique_ptr<AstChild> index) {
+        this->array = std::move(array);
+        this->index = std::move(index);
+    }
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "ArrayAccess";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(";
+        array->print();
+        std::cout << " ";
+        index->print();
+        std::cout << ")";
+    }
+};
+
 class AbstractSyntaxTree {
 public:
     virtual ~AbstractSyntaxTree() = default;
 
     std::vector<AstChild *> children;
 
-    void print();
+    [[maybe_unused]] void print();
 };
 
 #endif //ACL_AST_H

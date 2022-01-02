@@ -29,9 +29,9 @@ class Parser {
     /**
      * Expressions
      */
-    std::unique_ptr<AstChild> factor();
-    std::unique_ptr<AstChild> term();
-    std::unique_ptr<AstChild> expression();
+    std::unique_ptr<AstChild> factor(bool allowArrayAccess);
+    std::unique_ptr<AstChild> term(bool allowArrayAccess);
+    std::unique_ptr<AstChild> expression(bool allowArrayAccess = true);
 
     /**
      * Statements
@@ -48,7 +48,7 @@ class Parser {
     /**
      * Identifier
      */
-    std::unique_ptr<AstChild> identifier();
+    std::unique_ptr<AstChild> identifier(bool allowArrayAccess);
 
     /**
      * Important functions

@@ -182,7 +182,7 @@ std::unique_ptr<AstChild> Parser::ifStatement() {
                                              std::move(elseStatements));
 }
 
-std::unique_ptr<AstChild> Parser::identifier() {
+std::unique_ptr<AstChild> Parser::identifier(bool allowArrayAccess) {
     auto currentToken = this->tokens[this->currentTokenIndex];
 
     this->currentTokenIndex++;
@@ -217,6 +217,21 @@ std::unique_ptr<AstChild> Parser::identifier() {
         auto value = this->expression();
 
         return std::make_unique<VariableAssignmentNode>(currentToken.raw, std::move(value));
+    } else if (this->tokens[this->currentTokenIndex].type == Token::Type::LEFT_BRACKET) {
+        if (allowArrayAccess) {
+            this->currentTokenIndex--;
+
+            // The last token has to be the array
+            auto array = this->expression(false);
+
+            this->currentTokenIndex++;
+
+            auto index = this->expression();
+
+            this->expect(Token::Type::RIGHT_BRACKET);
+
+            return std::make_unique<ArrayAccessNode>(std::move(array), std::move(index));
+        }
     }
 
     auto res = std::make_unique<VariableReferenceNode>(currentToken.raw);
@@ -237,7 +252,7 @@ std::unique_ptr<AstChild> Parser::variableDefinition(bool constant) {
     return node;
 }
 
-std::unique_ptr<AstChild> Parser::factor() {
+std::unique_ptr<AstChild> Parser::factor(bool allowArrayAccess) {
     auto currentToken = this->tokens[this->currentTokenIndex];
 
     switch (currentToken.type) {
@@ -266,7 +281,7 @@ std::unique_ptr<AstChild> Parser::factor() {
 
             // Unary operator
             if (currentToken.raw == "-" || currentToken.raw == "+") {
-                auto expr = this->factor();
+                auto expr = this->factor(allowArrayAccess);
                 return std::make_unique<UnaryExpressionNode>(std::move(expr), currentToken.raw);
             } else {
                 throw std::runtime_error(
@@ -297,11 +312,11 @@ std::unique_ptr<AstChild> Parser::factor() {
             break;
     }
 
-    return this->identifier();
+    return this->identifier(allowArrayAccess);
 }
 
-std::unique_ptr<AstChild> Parser::term() {
-    auto left = this->factor();
+std::unique_ptr<AstChild> Parser::term(bool allowArrayAccess) {
+    auto left = this->factor(allowArrayAccess);
 
     while (this->currentTokenIndex < this->tokens.size() &&
            (this->tokens[this->currentTokenIndex].raw == "*" || this->tokens[this->currentTokenIndex].raw == "/")) {
@@ -309,14 +324,14 @@ std::unique_ptr<AstChild> Parser::term() {
 
         this->expect(Token::Type::OPERATOR);
 
-        left = std::make_unique<ExpressionNode>(std::move(left), std::move(this->factor()), currentToken.raw);
+        left = std::make_unique<ExpressionNode>(std::move(left), std::move(this->factor(allowArrayAccess)), currentToken.raw);
     }
 
     return left;
 }
 
-std::unique_ptr<AstChild> Parser::expression() {
-    auto left = this->term();
+std::unique_ptr<AstChild> Parser::expression(bool allowArrayAccess) {
+    auto left = this->term(allowArrayAccess);
     if (this->currentTokenIndex >= this->tokens.size()) {
         return left;
     }
@@ -332,7 +347,7 @@ std::unique_ptr<AstChild> Parser::expression() {
 
         this->expect(Token::Type::OPERATOR);
 
-        left = std::make_unique<ExpressionNode>(std::move(left), std::move(this->term()), currentToken.raw);
+        left = std::make_unique<ExpressionNode>(std::move(left), std::move(this->term(allowArrayAccess)), currentToken.raw);
         left->line = currentToken.line;
 
         currentRaw = this->tokens[this->currentTokenIndex].raw;

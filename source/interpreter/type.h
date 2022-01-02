@@ -63,34 +63,22 @@ public:
                 return std::to_string(floatValue);
             case STRING:
                 return stringValue;
-            case LIST:
-                return "list";
-            case VOID:
-                return "void";
-        }
-    }
+            case LIST: {
+                std::string os;
 
-    friend std::ostream &operator<<(std::ostream &os, const BasicValue &value) {
-        switch (value.type) {
-            case INT:
-                os << value.intValue;
-                break;
-            case FLOAT:
-                os << value.floatValue;
-                break;
-            case VOID:
-            case STRING:
-                os << value.stringValue;
-                break;
-            case LIST:
-                os << "[";
-                for (auto &v: value.listValue) {
-                    os << v << ", ";
+                os += "[";
+                for (auto &v: listValue) {
+                    os += v.getValue() + ", ";
                 }
-                os << "]";
+                os += "]";
+
+                break;
+            }
+            case VOID:
                 break;
         }
-        return os;
+
+        return "void";
     }
 };
 
