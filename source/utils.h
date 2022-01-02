@@ -22,6 +22,21 @@
 
 using namespace std;
 
+enum Color {
+    FG_RED = 31,
+    FG_GRAY = 38,
+    FG_GREEN = 32,
+    FG_BLUE = 34,
+    FG_DEFAULT = 39,
+    BG_RED = 41,
+    BG_GREEN = 42,
+    BG_BLUE = 44,
+    BG_DEFAULT = 49,
+    RESET = 00
+};
+
+string getColor(Color color);
+
 vector<string> splitString(string text, string delim);
 
 #endif //ACL_UTILS_H

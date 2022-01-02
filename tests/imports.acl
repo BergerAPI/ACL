@@ -4,8 +4,4 @@ import "std"
 
 let test = 5
 
-print(test(test, 5))
-hello()
-
-const os = os()
-println(os)
+test(test, 5)

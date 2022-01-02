@@ -17,6 +17,10 @@
 #include "utils.h"
 
 
+string getColor(Color color){
+    return "\033[" + to_string(color) + "m";
+}
+
 vector<string> splitString(string text, string delim) {
     vector<string> result;
     auto start = 0U;
