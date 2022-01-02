@@ -434,6 +434,7 @@ std::unique_ptr<AstChild> Parser::parseChild() {
             else if (token.raw == "func" || token.raw == "external") result = this->functionDefinition();
             else if (token.raw == "return") result = this->returnStatement();
             else if (token.raw == "import") result = this->importStatement();
+            else if (token.raw == "switch") result = this->switchStatement();
             else if (token.raw == "break") {
                 this->currentTokenIndex++;
                 result = std::make_unique<BreakStatementNode>();;
@@ -475,4 +476,42 @@ std::unique_ptr<AstChild> Parser::checkArrayAccess(std::unique_ptr<AstChild> chi
     }
 
     return std::make_unique<ArrayAccessNode>(std::move(child), std::move(expr));
+}
+
+std::unique_ptr<AstChild> Parser::switchStatement() {
+    this->currentTokenIndex++;
+
+    auto expr = this->expression();
+
+    this->expect(Token::Type::LEFT_BRACE);
+
+    auto cases = std::vector<std::unique_ptr<SwitchCaseNode>>();
+
+    while (this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_BRACE) {
+        auto token = this->tokens[this->currentTokenIndex];
+
+        if (token.type != Token::Type::KEYWORD || token.raw != "case")
+            throw std::runtime_error("Expected case keyword on line: " + std::to_string(token.line));
+
+        this->currentTokenIndex++;
+
+        auto caseExpr = this->expression();
+        caseExpr->line = token.line;
+
+        this->expect(Token::Type::LEFT_BRACE);
+
+        auto statements = std::vector<std::unique_ptr<AstChild>>();
+
+        while (this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_BRACE) {
+            statements.push_back(this->parseChild());
+        }
+
+        this->currentTokenIndex++;
+
+        cases.push_back(std::make_unique<SwitchCaseNode>(std::move(caseExpr), std::move(statements)));
+    }
+
+    this->currentTokenIndex++;
+
+    return std::make_unique<SwitchStatementNode>(std::move(expr), std::move(cases));
 }

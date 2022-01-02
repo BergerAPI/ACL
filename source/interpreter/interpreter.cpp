@@ -111,6 +111,30 @@ void Interpreter::interpretChild(AstChild *node) {
 
         // back to the parent scope
         this->current_scope = this->current_scope->parent;
+    } else if (node->getIdentifier() == "SwitchStatement") {
+        auto realNode = dynamic_cast<SwitchStatementNode *>(node);
+        auto expr = this->interpretExpression(realNode->condition.get());
+
+        // Checking which case is the correct one
+        for (auto &caseNode: realNode->cases) {
+            auto caseExpr = this->interpretExpression(caseNode->condition.get());
+
+            if (caseExpr.getValue() == expr.getValue()) {
+                // If it is, we need to interpret the case
+                for (auto &item: caseNode->body) {
+                    // new scope
+                    this->current_scope = new Scope(this->current_scope);
+
+                    this->interpretChild(item.get());
+
+                    // back to the parent scope
+                    this->current_scope = this->current_scope->parent;
+                }
+
+                return;
+            }
+        }
+
     } else if (node->getIdentifier() == "WhileStatement") {
         auto realNode = dynamic_cast<WhileStatementNode *>(node);
         auto condition = std::move(realNode->condition).get();

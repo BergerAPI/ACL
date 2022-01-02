@@ -29,7 +29,7 @@
       "patterns": [
         {
           "name": "keyword.control.acl",
-          "match": "\\b(if|while|for|return|else|func|let|in|break|continue|import|or|and|const|external)\\b"
+          "match": "\\b(if|while|for|return|else|func|let|in|break|continue|import|or|and|const|external|switch|case|default)\\b"
         }
       ]
     },
