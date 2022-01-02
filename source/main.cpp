@@ -15,6 +15,7 @@
  */
 
 #include "main.h"
+#include "utils.h"
 
 // A list of all parsed files.
 std::vector<std::pair<std::string, AbstractSyntaxTree *>> parsed_files;
@@ -47,19 +48,19 @@ int main(int argv, char **args) {
     return 0;
 }
 
-AbstractSyntaxTree *parse_file(std::string file_name, bool is_main_file) {
-    if (!file_name.ends_with(".acl"))
-        file_name += ".acl";
+AbstractSyntaxTree *parse_file(std::string file_path, bool is_main_file) {
+    if (!file_path.ends_with(".acl"))
+        file_path += ".acl";
 
     // Checking if we already have the file parsed in out files vector
     for (auto &file: parsed_files) {
-        if (file.first == file_name) {
+        if (file.first == file_path) {
             return file.second;
         }
     }
 
     // Checking if it's a file from the default
-    std::string std_path_raw = std::string(getenv("HOME")) + "/.acl/std/" + file_name;
+    std::string std_path_raw = std::string(getenv("HOME")) + "/.acl/std/" + file_path;
     std::ifstream std_path(std_path_raw);
 
 
@@ -68,10 +69,10 @@ AbstractSyntaxTree *parse_file(std::string file_name, bool is_main_file) {
         return parse_file(std_path_raw, true);
     }
 
-    std::ifstream file((is_main_file ? "" : source_path + "/") + file_name);
+    std::ifstream file((is_main_file ? "" : source_path + "/") + file_path);
 
     if (!file.is_open()) {
-        throw std::runtime_error("File not found: " + (is_main_file ? "" : source_path + "/") + file_name);
+        throw std::runtime_error("File not found: " + (is_main_file ? "" : source_path + "/") + file_path);
     }
 
     std::vector<Token> tokens = Lexer::tokenize(file);
@@ -82,7 +83,7 @@ AbstractSyntaxTree *parse_file(std::string file_name, bool is_main_file) {
     // Parse the tokens
     auto ast = parser.parse();
 
-    parsed_files.emplace_back(file_name, ast);
+    parsed_files.emplace_back(file_path, ast);
 
     return ast;
 }
