@@ -39,7 +39,7 @@ int main(int argv, char **args) {
 
     auto code = parse_file(std::string(args[1]), true)[0];
 
-    code->print();
+    // code->print();
 
     Interpreter interpreter(code);
 

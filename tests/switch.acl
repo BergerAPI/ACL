@@ -1,0 +1,13 @@
+import "std"
+
+switch "ffff" {
+    case "ff" {
+        println("ff")
+    }
+    case "ff00" {
+        println("ff00")
+    }
+    case "ffff" {
+        println("ffff")
+    }
+}

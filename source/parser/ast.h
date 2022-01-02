@@ -492,6 +492,64 @@ public:
     }
 };
 
+class SwitchCaseNode : public AstChild {
+public:
+    ~SwitchCaseNode() override = default;
+
+    std::unique_ptr<AstChild> condition;
+    std::vector<std::unique_ptr<AstChild>> body;
+
+    // Constructor requires a condition and body
+    SwitchCaseNode(std::unique_ptr<AstChild> condition, std::vector<std::unique_ptr<AstChild>> body) {
+        this->condition = std::move(condition);
+        this->body = std::move(body);
+    }
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "SwitchCase";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(";
+        condition->print();
+        std::cout << " ";
+        for (auto &statement: body) {
+            statement->print();
+            std::cout << " ";
+        }
+        std::cout << ")";
+    }
+};
+
+class SwitchStatementNode : public AstChild {
+public:
+    ~SwitchStatementNode() override = default;
+
+    std::unique_ptr<AstChild> condition;
+    std::vector<std::unique_ptr<SwitchCaseNode>> cases;
+
+    // Constructor requires a condition and body
+    SwitchStatementNode(std::unique_ptr<AstChild> condition, std::vector<std::unique_ptr<SwitchCaseNode>> cases) {
+        this->condition = std::move(condition);
+        this->cases = std::move(cases);
+    }
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "SwitchStatement";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(";
+        condition->print();
+        std::cout << " ";
+        for (auto &statement: cases) {
+            statement->print();
+            std::cout << " ";
+        }
+        std::cout << ")";
+    }
+};
+
 class AbstractSyntaxTree {
 public:
     virtual ~AbstractSyntaxTree() = default;

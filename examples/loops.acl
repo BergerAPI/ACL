@@ -5,6 +5,12 @@ for i in range(10, 20) {
     println("For loop is at " + i)
 }
 
+if (true) {
+    println("True")
+} else {
+    println("False")
+}
+
 let arrayTest = [["1", "2"], 2, 3, 4, 5][0]
 let firstElement = arrayTest[1]
 
