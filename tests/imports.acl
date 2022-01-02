@@ -2,7 +2,9 @@ import "importTest/importTest2/*"
 import "os"
 import "std"
 
-print(test(10, 5))
+let test = 5
+
+print(test(test, 5))
 hello()
 
 const os = os()
