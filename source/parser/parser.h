@@ -42,13 +42,17 @@ class Parser {
     std::unique_ptr<AstChild> forStatement();
     std::unique_ptr<AstChild> returnStatement();
     std::unique_ptr<AstChild> importStatement();
-
     std::unique_ptr<AstChild> functionDefinition();
 
     /**
      * Identifier
      */
     std::unique_ptr<AstChild> identifier(bool allowArrayAccess);
+
+    /**
+     * Checking for array access
+     */
+    std::unique_ptr<AstChild> checkArrayAccess(std::unique_ptr<AstChild> child);
 
     /**
      * Important functions

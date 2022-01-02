@@ -224,13 +224,7 @@ std::unique_ptr<AstChild> Parser::identifier(bool allowArrayAccess) {
             // The last token has to be the array
             auto array = this->expression(false);
 
-            this->currentTokenIndex++;
-
-            auto index = this->expression();
-
-            this->expect(Token::Type::RIGHT_BRACKET);
-
-            return std::make_unique<ArrayAccessNode>(std::move(array), std::move(index));
+            return this->checkArrayAccess(std::move(array));
         }
     }
 
@@ -305,7 +299,9 @@ std::unique_ptr<AstChild> Parser::factor(bool allowArrayAccess) {
 
             this->expect(Token::Type::RIGHT_BRACKET);
 
-            return std::make_unique<ArrayNode>(std::move(elements));
+            auto thing = std::make_unique<ArrayNode>(std::move(elements));
+
+            return checkArrayAccess(std::move(thing));
         }
 
         default:
@@ -332,6 +328,7 @@ std::unique_ptr<AstChild> Parser::term(bool allowArrayAccess) {
 
 std::unique_ptr<AstChild> Parser::expression(bool allowArrayAccess) {
     auto left = this->term(allowArrayAccess);
+
     if (this->currentTokenIndex >= this->tokens.size()) {
         return left;
     }
@@ -455,4 +452,27 @@ std::unique_ptr<AstChild> Parser::parseChild() {
                     "Unknown token type: " + std::to_string(static_cast<int>(token.type)) + " on line: " +
                     std::to_string(token.line));
     }
+}
+
+std::unique_ptr<AstChild> Parser::checkArrayAccess(std::unique_ptr<AstChild> child) {
+    if (this->currentTokenIndex >= this->tokens.size())
+        return child;
+
+    auto token = this->tokens[this->currentTokenIndex];
+
+    if (token.type != Token::Type::LEFT_BRACKET)
+        return child;
+
+    this->currentTokenIndex++;
+
+    auto expr = this->expression();
+    expr->line = token.line;
+
+    this->expect(Token::Type::RIGHT_BRACKET);
+
+    if (this->tokens[this->currentTokenIndex].type == Token::Type::LEFT_BRACKET) {
+        return this->checkArrayAccess(std::make_unique<ArrayAccessNode>(std::move(child), std::move(expr)));
+    }
+
+    return std::make_unique<ArrayAccessNode>(std::move(child), std::move(expr));
 }

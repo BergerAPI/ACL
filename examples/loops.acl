@@ -6,7 +6,7 @@ for i in range(10, 20) {
 }
 
 let arrayTest = [["1", "2"], 2, 3, 4, 5][0]
-let firstElement = arrayTest[0]
+let firstElement = arrayTest[1]
 
 println(firstElement)
 
