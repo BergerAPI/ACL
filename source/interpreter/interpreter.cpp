@@ -245,8 +245,6 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             else if (op == "!=") return BasicValue(left.stringValue != std::to_string(right.intValue));
             else throw std::runtime_error("Cannot divide, multiply two strings");
         } else if (left.type == BasicValue::Type::FLOAT && right.type == BasicValue::Type::FLOAT) {
-            std::cout << "left: " << left.floatValue << " right: " << right.floatValue << std::endl;
-
             if (op == "+") return BasicValue(left.floatValue + right.floatValue);
             else if (op == "-") return BasicValue(left.floatValue - right.floatValue);
             else if (op == "*") return BasicValue(left.floatValue * right.floatValue);
