@@ -26,7 +26,7 @@ std::vector<std::pair<std::string, AbstractSyntaxTree *>> parsed_files;
 std::string source_path;
 
 int main(int argv, char **args) {
-    throwError(ErrorType::WARNING, "test", "test", "test", 2, 2);
+    // throwError(ErrorType::WARNING, "test", "test", "test", "sdf", "sdfsdf", 2, 2);
     if (argv < 2) {
         std::cout << "Usage: " << args[0] << " <file>" << std::endl;
         return 1;

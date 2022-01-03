@@ -1,13 +1,23 @@
 import "std"
 
-switch "ffff" {
-    case "ff" {
-        println("ff")
+func test(n) {
+    switch "ffff" {
+        case "ff" {
+            println("ff")
+        }
+        case "ff00" {
+            println("ff00")
+        }
+        case "fff1" {
+            println("ffff")
+        }
+        default {
+            println("thing works")
+            return
+        }
     }
-    case "ff00" {
-        println("ff00")
-    }
-    case "ffff" {
-        println("ffff")
-    }
+
+    println("this should not be printed (or else thing doesn't work :agony:)")
 }
+
+test("r")

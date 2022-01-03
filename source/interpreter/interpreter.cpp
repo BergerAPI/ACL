@@ -114,27 +114,56 @@ void Interpreter::interpretChild(AstChild *node) {
     } else if (node->getIdentifier() == "SwitchStatement") {
         auto realNode = dynamic_cast<SwitchStatementNode *>(node);
         auto expr = this->interpretExpression(realNode->condition.get());
+        bool executed = false;
 
         // Checking which case is the correct one
         for (auto &caseNode: realNode->cases) {
-            auto caseExpr = this->interpretExpression(caseNode->condition.get());
+            if (caseNode->condition != nullptr) {
+                auto caseExpr = this->interpretExpression(caseNode->condition.get());
 
-            if (caseExpr.getValue() == expr.getValue()) {
-                // If it is, we need to interpret the case
-                for (auto &item: caseNode->body) {
+                if (caseExpr.getValue() == expr.getValue()) {
+                    if (executed)
+                        throw std::runtime_error("Multiple cases with the same value");
+
+                    executed = true;
+
+                    // If it is, we need to interpret the case
+                    for (auto &item: caseNode->body) {
+                        // new scope
+                        this->current_scope = new Scope(this->current_scope);
+
+                        this->interpretChild(item.get());
+
+                        // back to the parent scope
+                        this->current_scope = this->current_scope->parent;
+                    }
+
+                    return;
+                }
+            }
+        }
+
+        if (!executed) {
+            // Default case
+            for (auto &caseNode: realNode->cases) {
+                if (caseNode->condition == nullptr) {
+                    if (executed)
+                        throw std::runtime_error("Multiple default cases");
+
+                    executed = true;
+
                     // new scope
                     this->current_scope = new Scope(this->current_scope);
 
-                    this->interpretChild(item.get());
+                    for (auto &item: caseNode->body) {
+                        this->interpretChild(item.get());
+                    }
 
                     // back to the parent scope
                     this->current_scope = this->current_scope->parent;
                 }
-
-                return;
             }
         }
-
     } else if (node->getIdentifier() == "WhileStatement") {
         auto realNode = dynamic_cast<WhileStatementNode *>(node);
         auto condition = std::move(realNode->condition).get();
@@ -485,6 +514,67 @@ std::vector<AstChild *> Interpreter::getAllNodesInNode(AstChild *node, bool igno
                     nodes.push_back(item);
                 }
             }
+    }
+
+    if (node->getIdentifier() == "SwitchStatement") {
+        // Removing the node (This is a workaround, because other nodes need to be added too, even if they
+        // don't have a special case in this function)
+        nodes.pop_back();
+
+        auto realNode = dynamic_cast<SwitchStatementNode *>(node);
+        auto expr = this->interpretExpression(realNode->condition.get());
+        bool executed = false;
+
+        // Checking which case is the correct one
+        for (auto &caseNode: realNode->cases) {
+            if (caseNode->condition != nullptr) {
+                auto caseExpr = this->interpretExpression(caseNode->condition.get());
+
+                if (caseExpr.getValue() == expr.getValue()) {
+                    if (executed)
+                        throw std::runtime_error("Multiple cases with the same value");
+
+                    executed = true;
+
+                    // If it is, we need to interpret the case
+                    for (auto &item: caseNode->body) {
+                        for (auto &nItem: this->getAllNodesInNode(item.get(), ignoreLoops)) {
+                            nodes.push_back(nItem);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!executed) {
+            // Default case
+            for (auto &caseNode: realNode->cases) {
+                if (caseNode->condition == nullptr) {
+                    if (executed)
+                        throw std::runtime_error("Multiple default cases");
+
+                    executed = true;
+
+                    for (auto &nItem: this->getAllNodesInNode(caseNode.get(), ignoreLoops)) {
+                        nodes.push_back(nItem);
+                    }
+                }
+            }
+        }
+    }
+
+    if (node->getIdentifier() == "SwitchCase") {
+        // Removing the node (This is a workaround, because other nodes need to be added too, even if they
+        // don't have a special case in this function)
+        nodes.pop_back();
+
+        auto realNode = dynamic_cast<SwitchCaseNode *>(node);
+
+        for (auto &item: realNode->body) {
+            for (auto &nItem: this->getAllNodesInNode(item.get(), ignoreLoops)) {
+                nodes.push_back(nItem);
+            }
+        }
     }
 
     if (!ignoreLoops) {

@@ -490,17 +490,21 @@ std::unique_ptr<AstChild> Parser::switchStatement() {
     while (this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_BRACE) {
         auto token = this->tokens[this->currentTokenIndex];
 
-        if (token.type != Token::Type::KEYWORD || token.raw != "case")
+        if (token.type != Token::Type::KEYWORD || (token.raw != "case" && token.raw != "default"))
             throw std::runtime_error("Expected case keyword on line: " + std::to_string(token.line));
 
         this->currentTokenIndex++;
 
-        auto caseExpr = this->expression();
-        caseExpr->line = token.line;
+        auto statements = std::vector<std::unique_ptr<AstChild>>();
+
+        std::unique_ptr<AstChild> caseExpr = nullptr;
+
+        if (token.raw == "case") {
+            caseExpr = this->expression();
+            caseExpr->line = token.line;
+        }
 
         this->expect(Token::Type::LEFT_BRACE);
-
-        auto statements = std::vector<std::unique_ptr<AstChild>>();
 
         while (this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_BRACE) {
             statements.push_back(this->parseChild());
