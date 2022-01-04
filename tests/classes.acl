@@ -1,0 +1,7 @@
+class MeinKraft(meinkraft_value_1, meinkraft_value_2) {
+	const r_mein_kraft = meinkraft_value_1 + " helo che";
+
+	func meinKraft() {
+		print("Mein Kraft ist "+ r_mein_kraft +" und " + meinkraft_value_2)
+	}
+}
