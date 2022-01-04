@@ -1,5 +1,7 @@
 import "std"
 
+
+
 class MeinKraft(meinkraft_value_1, meinkraft_value_2) {
 	const r_mein_kraft = meinkraft_value_1 + " helo che";
 
