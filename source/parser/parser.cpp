@@ -435,6 +435,7 @@ std::unique_ptr<AstChild> Parser::parseChild() {
             else if (token.raw == "return") result = this->returnStatement();
             else if (token.raw == "import") result = this->importStatement();
             else if (token.raw == "switch") result = this->switchStatement();
+            else if (token.raw == "class") result = this->classDefinition();
             else if (token.raw == "break") {
                 this->currentTokenIndex++;
                 result = std::make_unique<BreakStatementNode>();;
@@ -518,4 +519,42 @@ std::unique_ptr<AstChild> Parser::switchStatement() {
     this->currentTokenIndex++;
 
     return std::make_unique<SwitchStatementNode>(std::move(expr), std::move(cases));
+}
+
+std::unique_ptr<AstChild> Parser::classDefinition() {
+    this->currentTokenIndex++;
+
+    auto name = this->tokens[this->currentTokenIndex].raw;
+
+    this->expect(Token::Type::IDENTIFIER);
+    this->expect(Token::Type::LEFT_PAREN);
+
+    auto params = std::vector<std::string>();
+
+    while (this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_PAREN) {
+        auto token = this->tokens[this->currentTokenIndex];
+
+        if (token.type != Token::Type::IDENTIFIER)
+            throw std::runtime_error("Expected identifier on line: " + std::to_string(token.line));
+
+        params.push_back(token.raw);
+
+        this->currentTokenIndex++;
+
+        if (this->tokens[this->currentTokenIndex].type == Token::Type::COMMA)
+            this->currentTokenIndex++;
+    }
+
+    this->currentTokenIndex++;
+    this->expect(Token::Type::LEFT_BRACE);
+
+    auto members = std::vector<std::unique_ptr<AstChild>>();
+
+    while (this->tokens[this->currentTokenIndex].type != Token::Type::RIGHT_BRACE) {
+        members.push_back(this->parseChild());
+    }
+
+    this->currentTokenIndex++;
+
+    return std::make_unique<ClassDefinitionNode>(name, std::move(members), std::move(params));
 }

@@ -256,6 +256,24 @@ void Interpreter::interpretChild(AstChild *node) {
         // Adding to the current scope
         this->current_scope->functions.emplace_back(realNode->name, &realNode->parameters, &realNode->body,
                                                     this->current_scope, realNode->isExternal);
+    } else if (node->getIdentifier() == "ClassDefinition") {
+        auto realNode = dynamic_cast<ClassDefinitionNode *>(node);
+
+        // We need to be in the highest scope
+        if (this->current_scope->parent != nullptr) {
+            throw std::runtime_error("Class definition must be in the highest scope");
+        }
+
+        // Checking if the body only contains: function definitions, variable definitions
+        for (const auto &item: realNode->body) {
+            if (item->getIdentifier() != "FunctionDefinition" && item->getIdentifier() != "VariableDefinition") {
+                throw std::runtime_error("Class definition can only contain function definitions and variable definitions");
+            }
+        }
+
+        // Adding to the current scope
+        auto scope = new Scope(this->current_scope);
+        this->current_scope->classes.emplace_back(realNode->name, &realNode->body, &realNode->constructor, scope);
     }
 }
 
@@ -386,6 +404,7 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
         throw std::runtime_error(
                 "Variable " + realNode->name + " is not defined, line: " + std::to_string(realNode->line + 1));
     } else if (node->getIdentifier() == "FunctionCall") {
+        // This can also be the instantiation of a class
         auto realNode = dynamic_cast<FunctionCallNode *>(node);
 
         // Searching in the all the scopes above the current scope
@@ -456,7 +475,48 @@ BasicValue Interpreter::interpretExpression(AstChild *node) {
             }
         }
 
-        throw std::runtime_error("Function " + realNode->name + " is not defined");
+        // Checking if we might be instantiating a class
+        for (auto scope = this->current_scope; scope != nullptr; scope = scope->parent) {
+            for (const auto &item: scope->classes) {
+                if (item.name == realNode->name) {
+                    // Checking the constructor
+                    if (realNode->args.size() != item.constructor->size())
+                        throw std::runtime_error("Wrong number of arguments");
+
+                    auto instance = BasicValue(item.name, true);
+
+                    // Saving the current scope
+                    auto old_scope = this->current_scope;
+
+                    // new scope
+                    auto new_scope = new Scope();
+
+                    // We need to add the parameters to the scope
+                    auto index = 0;
+
+                    for (auto &parameter: *item.constructor) {
+                        new_scope->variables.emplace_back(parameter,
+                                                          this->interpretExpression(
+                                                                  realNode->args[index].get()), false);
+                        index++;
+                    }
+
+                    this->current_scope = new_scope;
+
+                    // Interpreting
+                    for (auto &bodyNode: *item.body) {
+                        this->interpretChild(bodyNode.get());
+                    }
+
+                    // back to the parent scope
+                    this->current_scope = old_scope;
+
+                    return instance;
+                }
+            }
+        }
+
+        throw std::runtime_error("Function/Class " + realNode->name + " is not defined");
     } else if (node->getIdentifier() == "Array") {
         // Defining an array
         auto realNode = dynamic_cast<ArrayNode *>(node);

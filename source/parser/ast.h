@@ -550,6 +550,39 @@ public:
     }
 };
 
+class ClassDefinitionNode : public AstChild {
+public:
+    ~ClassDefinitionNode() override = default;
+
+    std::string name;
+    std::vector<std::unique_ptr<AstChild>> body;
+
+    // Constructor values
+    std::vector<std::string> constructor;
+
+    // Constructor requires a name and body
+    ClassDefinitionNode(std::string name, std::vector<std::unique_ptr<AstChild>> body, std::vector<std::string> constructor) {
+        this->name = std::move(name);
+        this->body = std::move(body);
+        this->constructor = std::move(constructor);
+    }
+
+    [[nodiscard]] std::string getIdentifier() override {
+        return "ClassDefinition";
+    }
+
+    void print() override {
+        std::cout << this->getIdentifier() << "(";
+        std::cout << name;
+        std::cout << " ";
+        for (auto &statement: body) {
+            statement->print();
+            std::cout << " ";
+        }
+        std::cout << ")";
+    }
+};
+
 class AbstractSyntaxTree {
 public:
     virtual ~AbstractSyntaxTree() = default;

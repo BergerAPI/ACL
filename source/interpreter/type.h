@@ -37,12 +37,13 @@ public:
     float floatValue{};
     std::string stringValue;
     std::vector<BasicValue> listValue;
+    bool is_class_instance;
 
     explicit BasicValue(int value) : type(INT), intValue(value) {}
 
     explicit BasicValue(float value) : type(FLOAT), floatValue(value) {}
 
-    explicit BasicValue(std::string value) : type(STRING), stringValue(std::move(value)) {
+    explicit BasicValue(std::string value, bool is_class_instance = false) : type(STRING), stringValue(std::move(value)), is_class_instance(is_class_instance) {
         // Replacing all '\\n' with a new line character.
         auto a = stringValue.find("\\n");
         while (a != std::string::npos) {

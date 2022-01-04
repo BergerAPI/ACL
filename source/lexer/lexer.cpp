@@ -87,7 +87,7 @@ std::vector<Token> Lexer::tokenize(std::istream &input) {
                          identifier == "func" || identifier == "return" || identifier == "let" || identifier == "for" ||
                          identifier == "in" || identifier == "break" || identifier == "continue" ||
                          identifier == "import" || identifier == "const" || identifier == "external" ||
-                         identifier == "switch" || identifier == "case" || identifier == "default")
+                         identifier == "switch" || identifier == "case" || identifier == "default" || identifier == "class")
                     tokens.emplace_back(Token::Type::KEYWORD, identifier, line_index);
                 else tokens.emplace_back(Token::Type::IDENTIFIER, identifier, line_index);
 

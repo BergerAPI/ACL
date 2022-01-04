@@ -44,6 +44,7 @@ class Parser {
     std::unique_ptr<AstChild> importStatement();
     std::unique_ptr<AstChild> functionDefinition();
     std::unique_ptr<AstChild> switchStatement();
+    std::unique_ptr<AstChild> classDefinition();
 
     /**
      * Identifier
