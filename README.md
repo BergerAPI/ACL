@@ -27,6 +27,8 @@ Conditions can be surrounded in `()` if you wish, and you may also end lines in 
 
 - Import - `import <file>`
 
+- Classes - `class <classname>([constructorargs]) {}`
+
 
 `continue` and `break` are supported in loops.
 
