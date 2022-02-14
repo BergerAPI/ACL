@@ -1,0 +1,14 @@
+// sexy mogus near your location :smirk:
+r := 1 + 2 * (7 + 7)
+print("r: %i\n", r)
+
+func test() {
+    func a() {
+        print("a\n")
+    }
+
+    print("hello %i! %i\n", 1337, 187)
+    a()
+}
+
+test()
