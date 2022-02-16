@@ -7,6 +7,7 @@
 
 #include "../json.hpp"
 #include "../compiler/scope.h"
+#include "type.h"
 
 namespace parser {
     namespace ast {
@@ -82,16 +83,45 @@ namespace parser {
             nlohmann::json to_json() override;
         };
 
+        class ASTFunctionParameter : public ASTNode {
+        public:
+            std::string name;
+            Type type;
+
+            ASTFunctionParameter(std::string name, Type type) : name(name), type(type) {}
+
+            llvm::Value *visit_node(Scope *scope, llvm::LLVMContext *context, llvm::IRBuilder<> *builder,
+                                    llvm::Module *module) override;
+
+            nlohmann::json to_json() override;
+        };
+
         class ASTFunctionDefinition : public ASTNode {
         public:
             std::string name;
-            std::vector<std::string> arguments;
+            std::vector<std::unique_ptr<ASTFunctionParameter>> arguments;
             std::vector<std::unique_ptr<ASTNode>> body;
+            Type return_type;
 
-            ASTFunctionDefinition(std::string name, std::vector<std::string> arguments, std::vector<std::unique_ptr<ASTNode>> body)
-                    : name(name),
-                      arguments(std::move(arguments)),
-                      body(std::move(body)) {}
+            ASTFunctionDefinition(std::string name, std::vector<std::unique_ptr<ASTFunctionParameter>> arguments,
+                                  std::vector<std::unique_ptr<ASTNode>> body, Type return_type) : name(name),
+                                                                                                  arguments(std::move(
+                                                                                                          arguments)),
+                                                                                                  body(std::move(body)),
+                                                                                                  return_type(
+                                                                                                          return_type) {}
+
+            llvm::Value *visit_node(Scope *scope, llvm::LLVMContext *context, llvm::IRBuilder<> *builder,
+                                    llvm::Module *module) override;
+
+            nlohmann::json to_json() override;
+        };
+
+        class ASTFunctionReturn : public ASTNode {
+        public:
+            std::unique_ptr<ASTNode> value;
+
+            ASTFunctionReturn(std::unique_ptr<ASTNode> value) : value(std::move(value)) {}
 
             llvm::Value *visit_node(Scope *scope, llvm::LLVMContext *context, llvm::IRBuilder<> *builder,
                                     llvm::Module *module) override;

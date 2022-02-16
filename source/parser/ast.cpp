@@ -133,8 +133,18 @@ parser::ast::ASTFunctionDefinition::visit_node(Scope *scope, llvm::LLVMContext *
                                                llvm::Module *module) {
     std::vector<llvm::Type *> args;
 
+    // Creating the scope
+    Scope *function_scope = new Scope(scope);
+
+    // Creating the arguments
+    for (auto &a: this->arguments) {
+        auto type = kind_to_llvm(context, a->type);
+
+        args.push_back(type);
+    }
+
     // Creating the function
-    llvm::FunctionType *f_type = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), args, false);
+    llvm::FunctionType *f_type = llvm::FunctionType::get(kind_to_llvm(context, this->return_type), args, false);
     llvm::Function *function = llvm::Function::Create(f_type, llvm::Function::ExternalLinkage, this->name, module);
 
     // Creating the basic block
@@ -145,14 +155,19 @@ parser::ast::ASTFunctionDefinition::visit_node(Scope *scope, llvm::LLVMContext *
 
     builder->SetInsertPoint(block);
 
-    // Creating the scope
-    Scope *function_scope = new Scope(scope);
+    // Adding the variables (we have the function here)
+    int index = 0;
 
-    // Creating the arguments
-    /*for (auto &a: this->arguments) {
-        auto v = a->visit_node(function_scope, context, builder, module);
-        function_scope->variables.push_back(Variable(a->name, v));
-    }*/
+    for (auto &a: this->arguments) {
+        auto value = function->arg_begin() + index;
+        auto ai = new llvm::AllocaInst(value->getType(), 0, "", builder->GetInsertBlock());
+
+        builder->CreateStore(value, ai);
+
+        function_scope->variables.push_back(Variable(a->name, ai));
+
+        index++;
+    }
 
     // Creating the body
     for (auto &b: this->body) {
@@ -160,17 +175,48 @@ parser::ast::ASTFunctionDefinition::visit_node(Scope *scope, llvm::LLVMContext *
     }
 
     // Returning
-    builder->CreateRetVoid();
+    if (this->return_type.kind == Type::Kind::Void)
+        builder->CreateRetVoid();
 
     // Restoring the insert point
     builder->SetInsertPoint(save_point);
 
     scope->functions.push_back(Function(this->name, function));
+
+    return function;
 }
 
 nlohmann::json parser::ast::ASTFunctionDefinition::to_json() {
     nlohmann::json j;
     j["type"] = "ASTFunctionDefinition";
     j["name"] = this->name;
+    j["return_type"] = this->return_type.name;
+    return j;
+}
+
+llvm::Value *
+parser::ast::ASTFunctionParameter::visit_node(Scope *scope, llvm::LLVMContext *context, llvm::IRBuilder<> *builder,
+                                              llvm::Module *module) {
+    return nullptr;
+}
+
+nlohmann::json parser::ast::ASTFunctionParameter::to_json() {
+    nlohmann::json j;
+    j["type"] = "ASTFunctionParameter";
+    j["name"] = this->name;
+    j["type"] = this->type.name;
+    return j;
+}
+
+llvm::Value *
+parser::ast::ASTFunctionReturn::visit_node(Scope *scope, llvm::LLVMContext *context, llvm::IRBuilder<> *builder,
+                                              llvm::Module *module) {
+    return builder->CreateRet(this->value->visit_node(scope, context, builder, module));
+}
+
+nlohmann::json parser::ast::ASTFunctionReturn::to_json() {
+    nlohmann::json j;
+    j["type"] = "ASTFunctionParameter";
+    j["value"] = this->value->to_json();
     return j;
 }

@@ -5,7 +5,7 @@ Token *parser::Parser::expect(Token::Type type) {
     Token *token = &this->tokens[this->current_token_index];
 
     if (token->type != type) {
-        err::error(6, "Expected token of type " + type_to_str(type), token);
+        err::error(6, "Expected token of type " + type_to_str(type) + ", found " + type_to_str(token->type), token);
         exit(EXIT_FAILURE);
     }
 
@@ -44,11 +44,37 @@ std::unique_ptr<parser::ast::ASTNode> parser::Parser::operand() {
 
         if (k->raw == "func") {
             auto identifier = this->expect(Token::Type::IDENTIFIER);
-            //auto params = std::make_unique<ast::ASTParameters>();
-            auto body = std::vector<std::unique_ptr<ast::ASTNode >>();
+            auto params = std::vector<std::unique_ptr<ast::ASTFunctionParameter>>();
+            auto body = std::vector<std::unique_ptr<ast::ASTNode>>();
+            auto return_type = Type(Type::Kind::Void, "Void");
 
             this->expect(Token::Type::LEFT_PAREN);
+
+            while (current_token->type != Token::Type::RIGHT_PAREN) {
+                auto param_name = this->expect(Token::Type::IDENTIFIER);
+
+                this->expect(Token::Type::COLON);
+
+                auto param_type_raw = this->expect(Token::Type::IDENTIFIER);
+                auto param_type = string_to_kind(param_type_raw->raw);
+                auto type = Type(param_type, param_type_raw->raw);
+
+                params.push_back(std::make_unique<ast::ASTFunctionParameter>(param_name->raw, type));
+
+                if (current_token->type != Token::Type::RIGHT_PAREN) {
+                    this->expect(Token::Type::COMMA);
+                }
+            }
+
             this->expect(Token::Type::RIGHT_PAREN);
+
+            if (current_token->type == Token::Type::ARROW) {
+                this->expect(Token::Type::ARROW);
+
+                auto return_type_raw = this->expect(Token::Type::IDENTIFIER);
+                return_type = Type(string_to_kind(return_type_raw->raw), return_type_raw->raw);
+            }
+
             this->expect(Token::Type::LEFT_BRACE);
 
             while (current_token != nullptr && current_token->type != Token::Type::RIGHT_BRACE) {
@@ -57,8 +83,13 @@ std::unique_ptr<parser::ast::ASTNode> parser::Parser::operand() {
 
             this->expect(Token::Type::RIGHT_BRACE);
 
-            return std::make_unique<ast::ASTFunctionDefinition>(identifier->raw, std::vector<std::string>(),
-                                                                std::move(body));
+            return std::make_unique<ast::ASTFunctionDefinition>(identifier->raw, std::move(params), std::move(body),
+                                                                return_type);
+        }
+
+        if (k->raw == "return") {
+            auto node = this->expression();
+            return std::make_unique<ast::ASTFunctionReturn>(std::move(node));
         }
     }
 

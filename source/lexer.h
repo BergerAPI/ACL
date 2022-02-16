@@ -46,6 +46,7 @@ public:
         EQUALS,
 
         KEYWORD,
+        ARROW
     };
 
     Token(Type type, std::string raw, std::string file_name, int line, int start, int end)
@@ -78,6 +79,7 @@ static std::string type_to_str(Token::Type type) {
         case Token::FLOAT: return "FLOAT";
         case Token::EQUALS: return "EQUALS";
         case Token::KEYWORD: return "KEYWORD";
+        case Token::ARROW: return "ARROW";
         default: return "UNKNOWN -> " + type;
     }
 }

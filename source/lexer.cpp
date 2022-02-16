@@ -156,7 +156,19 @@ std::vector<Token> Lexer::tokenize(std::string name, std::istream &input) {
             }
 
             // If the char is an operator character
-            if (c == '+' || c == '-' || c == '*' || c == '/' || c == '%') {
+            if (c == '+' || c == '*' || c == '/' || c == '%') {
+                tokens.emplace_back(Token::Type::OPERATOR, std::string(1, c), name, line_index, i, i + 1);
+                continue;
+            }
+
+            if (c == '-') {
+                // Checking for an arrow (->)
+                if (i + 1 < line.size() && line[i + 1] == '>') {
+                    tokens.emplace_back(Token::Type::ARROW, "->", name, line_index, i, i + 2);
+                    i++;
+                    continue;
+                }
+
                 tokens.emplace_back(Token::Type::OPERATOR, std::string(1, c), name, line_index, i, i + 1);
                 continue;
             }
