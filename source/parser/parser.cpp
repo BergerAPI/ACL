@@ -24,12 +24,12 @@ Token *parser::Parser::expect(Token::Type type) {
 std::unique_ptr<parser::ast::ASTNode> parser::Parser::operand() {
     if (current_token->type == Token::Type::INT) {
         auto i = this->expect(Token::Type::INT);
-        return std::make_unique<ast::ASTInteger>(std::stoi(i->raw));
+        return std::make_unique<ast::ASTInteger>(std::stoi(i->raw), i);
     }
 
     if (current_token->type == Token::Type::STRING) {
         auto s = this->expect(Token::Type::STRING);
-        return std::make_unique<ast::ASTString>(s->raw);
+        return std::make_unique<ast::ASTString>(s->raw, s);
     }
 
     if (current_token->type == Token::Type::LEFT_PAREN) {
@@ -59,7 +59,7 @@ std::unique_ptr<parser::ast::ASTNode> parser::Parser::operand() {
                 auto param_type = string_to_kind(param_type_raw->raw);
                 auto type = Type(param_type, param_type_raw->raw);
 
-                params.push_back(std::make_unique<ast::ASTFunctionParameter>(param_name->raw, type));
+                params.push_back(std::make_unique<ast::ASTFunctionParameter>(param_name->raw, type, k));
 
                 if (current_token->type != Token::Type::RIGHT_PAREN) {
                     this->expect(Token::Type::COMMA);
@@ -84,12 +84,45 @@ std::unique_ptr<parser::ast::ASTNode> parser::Parser::operand() {
             this->expect(Token::Type::RIGHT_BRACE);
 
             return std::make_unique<ast::ASTFunctionDefinition>(identifier->raw, std::move(params), std::move(body),
-                                                                return_type);
+                                                                return_type, k);
         }
 
         if (k->raw == "return") {
-            auto node = this->expression();
-            return std::make_unique<ast::ASTFunctionReturn>(std::move(node));
+            if (this->current_token->raw == "void")
+                return std::make_unique<ast::ASTFunctionReturn>(std::move(k));
+
+            return std::make_unique<ast::ASTFunctionReturn>(std::move(this->expression()), k);
+        }
+
+        if (k->raw == "if") {
+            this->expect(Token::Type::LEFT_PAREN);
+            auto condition = this->expression();
+            this->expect(Token::Type::RIGHT_PAREN);
+
+            auto then_branch = std::vector<std::unique_ptr<ast::ASTNode>>();
+            auto else_branch = std::vector<std::unique_ptr<ast::ASTNode>>();
+
+            this->expect(Token::Type::LEFT_BRACE);
+
+            while (current_token != nullptr && current_token->type != Token::Type::RIGHT_BRACE) {
+                then_branch.push_back(this->expression());
+            }
+
+            this->expect(Token::Type::RIGHT_BRACE);
+
+            if (current_token != nullptr && current_token->type == Token::Type::KEYWORD && current_token->raw == "else") {
+                this->expect(Token::Type::KEYWORD);
+                this->expect(Token::Type::LEFT_BRACE);
+
+                while (current_token != nullptr && current_token->type != Token::Type::RIGHT_BRACE) {
+                    else_branch.push_back(this->expression());
+                }
+
+                this->expect(Token::Type::RIGHT_BRACE);
+            }
+
+            return std::make_unique<ast::ASTIfStatement>(std::move(condition), std::move(then_branch),
+                                                         std::move(else_branch), k);
         }
     }
 
@@ -107,7 +140,7 @@ std::unique_ptr<parser::ast::ASTNode> parser::Parser::term() {
 
         auto right = this->operand();
 
-        node = std::make_unique<ast::ASTBinaryExpression>(std::move(node), std::move(right), op->raw);
+        node = std::make_unique<ast::ASTBinaryExpression>(std::move(node), std::move(right), op->raw, node->get_base());
     }
 
     return node;
@@ -121,7 +154,19 @@ std::unique_ptr<parser::ast::ASTNode> parser::Parser::expression() {
 
         auto right = this->term();
 
-        node = std::make_unique<ast::ASTBinaryExpression>(std::move(node), std::move(right), op->raw);
+        node = std::make_unique<ast::ASTBinaryExpression>(std::move(node), std::move(right), op->raw, node->get_base());
+    }
+
+    // Checking for == and !=
+    while (current_token != nullptr &&
+        (current_token->raw == "==" || current_token->raw == "!=" || current_token->raw == ">" ||
+         current_token->raw == "<" || current_token->raw == ">=" || current_token->raw == "<=")) {
+
+        Token *op = this->expect(current_token->type);
+
+        auto right = this->expression();
+
+        node = std::make_unique<ast::ASTBinaryExpression>(std::move(node), std::move(right), op->raw, node->get_base());
     }
 
     return node;
@@ -135,7 +180,7 @@ std::unique_ptr<parser::ast::ASTNode> parser::Parser::identifier() {
         this->expect(Token::Type::ASSIGN);
         auto expression = this->expression();
 
-        return std::make_unique<ast::ASTVariableDefinition>(identifier->raw, std::move(expression));
+        return std::make_unique<ast::ASTVariableDefinition>(identifier->raw, std::move(expression), identifier);
     }
 
     // Checking for function class (identifier(parameters)
@@ -152,16 +197,12 @@ std::unique_ptr<parser::ast::ASTNode> parser::Parser::identifier() {
             }
         }
 
-        for (auto &parameter: parameters) {
-            std::cout << identifier->raw << std::endl;
-        }
-
         this->expect(Token::Type::RIGHT_PAREN);
 
-        return std::make_unique<ast::ASTFunctionCall>(identifier->raw, std::move(parameters));
+        return std::make_unique<ast::ASTFunctionCall>(identifier->raw, std::move(parameters), identifier);
     }
 
-    return std::make_unique<ast::ASTVariableReference>(identifier->raw);
+    return std::make_unique<ast::ASTVariableReference>(identifier->raw, identifier);
 }
 
 std::vector<std::unique_ptr<parser::ast::ASTNode>> parser::Parser::build() {

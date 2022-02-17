@@ -1,4 +1,7 @@
 #include "ast.h"
+#include "../error/error.h"
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/SmallString.h"
 
 llvm::Value *
 parser::ast::ASTBinaryExpression::visit_node(Scope *scope, llvm::LLVMContext *context, llvm::IRBuilder<> *builder,
@@ -8,17 +11,55 @@ parser::ast::ASTBinaryExpression::visit_node(Scope *scope, llvm::LLVMContext *co
 
     auto insert_block = builder->GetInsertBlock();
 
-    if (op == "+")
-        return llvm::BinaryOperator::CreateAdd(l, r, "", insert_block);
+    if (l->getType()->isIntegerTy()) {
+        if (op == "+")
+            return llvm::BinaryOperator::CreateAdd(l, r, "", insert_block);
 
-    if (op == "-")
-        return llvm::BinaryOperator::CreateSub(l, r, "", insert_block);
+        if (op == "-")
+            return llvm::BinaryOperator::CreateSub(l, r, "", insert_block);
 
-    if (op == "*")
-        return llvm::BinaryOperator::CreateMul(l, r, "", insert_block);
+        if (op == "*")
+            return llvm::BinaryOperator::CreateMul(l, r, "", insert_block);
 
-    if (op == "/")
-        return llvm::BinaryOperator::CreateSDiv(l, r, "", insert_block);
+        if (op == "/")
+            return llvm::BinaryOperator::CreateSDiv(l, r, "", insert_block);
+
+        if (op == "%")
+            return llvm::BinaryOperator::CreateSRem(l, r, "", insert_block);
+
+        if (op == "==")
+            return builder->CreateICmpEQ(l, r, "");
+
+        if (op == "!=")
+            return builder->CreateICmpNE(l, r, "");
+
+        if (op == "<")
+            return builder->CreateICmpSLT(l, r, "");
+
+        if (op == "<=")
+            return builder->CreateICmpSLE(l, r, "");
+
+        if (op == ">")
+            return builder->CreateICmpSGT(l, r, "");
+
+        if (op == ">=")
+            return builder->CreateICmpSGE(l, r, "");
+    }
+
+    // String
+    if (l->getType()->isPointerTy()) {
+        if (op == "==")
+            return builder->CreateICmpEQ(l, r, "");
+
+        if (op == "!=")
+            return builder->CreateICmpNE(l, r, "");
+
+        if (op == "+")
+            return builder->CreateCall(module->getFunction("concat"), {l, r}, "");
+
+        err::error(0, "Invalid operator for string (" + op + ")", std::move(this->base_token));
+        exit(0);
+    }
 
     return nullptr;
 }
@@ -29,6 +70,7 @@ nlohmann::json parser::ast::ASTBinaryExpression::to_json() {
     j["op"] = this->op;
     j["left"] = this->left->to_json();
     j["right"] = this->right->to_json();
+    j["base_token"] = this->base_token->raw;
     return j;
 }
 
@@ -41,18 +83,20 @@ nlohmann::json parser::ast::ASTInteger::to_json() {
     nlohmann::json j;
     j["type"] = "ASTInteger";
     j["value"] = this->value;
+    j["base_token"] = this->base_token->raw;
     return j;
 }
 
 llvm::Value *parser::ast::ASTString::visit_node(Scope *scope, llvm::LLVMContext *context, llvm::IRBuilder<> *builder,
                                                 llvm::Module *module) {
-    return builder->CreateGlobalStringPtr(llvm::StringRef(value), "", false);
+    return builder->CreateGlobalStringPtr(llvm::StringRef(value), "");
 }
 
 nlohmann::json parser::ast::ASTString::to_json() {
     nlohmann::json j;
     j["type"] = "ASTString";
     j["value"] = this->value;
+    j["base_token"] = this->base_token->raw;
     return j;
 }
 
@@ -75,6 +119,7 @@ nlohmann::json parser::ast::ASTVariableDefinition::to_json() {
     j["type"] = "ASTVariableDefinition";
     j["name"] = this->name;
     j["value"] = this->value->to_json();
+    j["base_token"] = this->base_token->raw;
     return j;
 }
 
@@ -97,6 +142,7 @@ nlohmann::json parser::ast::ASTVariableReference::to_json() {
     nlohmann::json j;
     j["type"] = "ASTVariableReference";
     j["name"] = this->name;
+    j["base_token"] = this->base_token->raw;
     return j;
 }
 
@@ -125,6 +171,16 @@ nlohmann::json parser::ast::ASTFunctionCall::to_json() {
     nlohmann::json j;
     j["type"] = "ASTFunctionCall";
     j["name"] = this->name;
+    j["base_token"] = this->base_token->raw;
+
+    nlohmann::json args;
+
+    for (auto &a: this->arguments) {
+        args.push_back(a->to_json());
+    }
+
+    j["arguments"] = args;
+
     return j;
 }
 
@@ -146,6 +202,8 @@ parser::ast::ASTFunctionDefinition::visit_node(Scope *scope, llvm::LLVMContext *
     // Creating the function
     llvm::FunctionType *f_type = llvm::FunctionType::get(kind_to_llvm(context, this->return_type), args, false);
     llvm::Function *function = llvm::Function::Create(f_type, llvm::Function::ExternalLinkage, this->name, module);
+
+    function_scope->current_function = function;
 
     // Creating the basic block
     llvm::BasicBlock *block = llvm::BasicBlock::Create(*context, "entry", function);
@@ -181,7 +239,7 @@ parser::ast::ASTFunctionDefinition::visit_node(Scope *scope, llvm::LLVMContext *
     // Restoring the insert point
     builder->SetInsertPoint(save_point);
 
-    scope->functions.push_back(Function(this->name, function));
+    scope->functions.push_back(Function(this->name, function, this->return_type));
 
     return function;
 }
@@ -191,6 +249,7 @@ nlohmann::json parser::ast::ASTFunctionDefinition::to_json() {
     j["type"] = "ASTFunctionDefinition";
     j["name"] = this->name;
     j["return_type"] = this->return_type.name;
+    j["base_token"] = this->base_token->raw;
     return j;
 }
 
@@ -205,12 +264,17 @@ nlohmann::json parser::ast::ASTFunctionParameter::to_json() {
     j["type"] = "ASTFunctionParameter";
     j["name"] = this->name;
     j["type"] = this->type.name;
+    j["base_token"] = this->base_token->raw;
     return j;
 }
 
 llvm::Value *
 parser::ast::ASTFunctionReturn::visit_node(Scope *scope, llvm::LLVMContext *context, llvm::IRBuilder<> *builder,
-                                              llvm::Module *module) {
+                                           llvm::Module *module) {
+    if (this->value == nullptr) {
+        return builder->CreateRetVoid();
+    }
+
     return builder->CreateRet(this->value->visit_node(scope, context, builder, module));
 }
 
@@ -218,5 +282,43 @@ nlohmann::json parser::ast::ASTFunctionReturn::to_json() {
     nlohmann::json j;
     j["type"] = "ASTFunctionParameter";
     j["value"] = this->value->to_json();
+    j["base_token"] = this->base_token->raw;
+    return j;
+}
+
+llvm::Value *
+parser::ast::ASTIfStatement::visit_node(Scope *scope, llvm::LLVMContext *context, llvm::IRBuilder<> *builder,
+                                           llvm::Module *module) {
+    auto cond = this->condition->visit_node(scope, context, builder, module);
+
+    auto then_block = llvm::BasicBlock::Create(*context, "then", scope->current_function);
+    auto else_block = llvm::BasicBlock::Create(*context, "else", scope->current_function);
+    auto end_block = llvm::BasicBlock::Create(*context, "end", scope->current_function);
+
+    builder->CreateCondBr(cond, then_block, else_block);
+    builder->SetInsertPoint(then_block);
+
+    for (auto &b: this->body) {
+        b->visit_node(scope, context, builder, module);
+    }
+
+    builder->CreateBr(end_block);
+    builder->SetInsertPoint(else_block);
+
+    for (auto &b: this->else_branch) {
+        b->visit_node(scope, context, builder, module);
+    }
+
+    builder->CreateBr(end_block);
+    builder->SetInsertPoint(end_block);
+
+    return nullptr;
+}
+
+nlohmann::json parser::ast::ASTIfStatement::to_json() {
+    nlohmann::json j;
+    j["type"] = "ASTIfStatement";
+    j["condition"] = this->condition->to_json();
+    j["base_token"] = this->base_token->raw;
     return j;
 }

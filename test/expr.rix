@@ -1,17 +1,17 @@
-// sexy mogus near your location :smirk:
-func doTheThing(r: Int) -> Int {
-    return 1 + r * (7 + 7)
+func concat(s1: String, s2: String) -> String {
+    result := malloc(strlen(s1) + strlen(s2) + 1)
+
+    strcpy(result, s1)
+    strcat(result, s2)
+
+    return result
 }
 
-func test(m: Int) -> Int {
-    func a() {
-        print("a\n")
-    }
+thing := concat("sd", "f")
+r := "sdf"
 
-    print("hello %i! %i\n", m, 187)
-    a()
-
-    return m
+if (r == "sdf") {
+    print("It did in fact work! (" + r + ")")
+} else {
+    print("It didn't work! (" + r + ")")
 }
-
-test(doTheThing(2))

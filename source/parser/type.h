@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include "../lexer.h"
 
 class Type {
 
@@ -24,6 +25,11 @@ public:
 
     Type(Kind kind, std::string name) : kind(kind), name(name) {}
 };
+
+// This code is a little messed up, but it's the best I could come up with.
+// I'm not sure if it's the best way to do it, but it works.
+// C++ doesn't provide any way to get the name of an enum, so I had to
+// write my own.
 
 static std::string kind_to_string(Type::Kind type) {
     switch (type) {
@@ -96,4 +102,20 @@ static llvm::Type *kind_to_llvm(llvm::LLVMContext *context, Type type) {
     }
 
     throw std::runtime_error("Unknown type");
+}
+
+static Type *token_to_type(Token value) {
+    if (value.type == Token::Type::IDENTIFIER)
+        return new Type(Type::Kind::UserDefined, value.raw);
+
+    if (value.type == Token::Type::INT)
+        return new Type(Type::Kind::Int, "Int");
+
+    if (value.type == Token::Type::FLOAT)
+        return new Type(Type::Kind::Float, "Float");
+
+    if (value.type == Token::Type::STRING)
+        return new Type(Type::Kind::String, "String");
+
+    return nullptr;
 }
